@@ -1,18 +1,17 @@
 import { useState } from "react";
 import { Search, X } from "lucide-react";
 import { Link } from "react-scroll";
-import { carne, cerdo, pollos } from "./Productosdata";
+import { useQuery } from "@tanstack/react-query";
+import api from "../api/api";
 import CardProducts from "./CardProducts";
 
-// 2. Definición del objeto de datos mapeado a categorías
-// Esto es crucial para usar la lógica de pestañas (activeCategory)
-const allProducts = {
-    'Vacunos': carne,
-    'Cerdo': cerdo,
-    'Pollos': pollos
-};
-
 const CATEGORIES = ['Vacunos', 'Cerdo', 'Pollos']; 
+
+const CATEGORY_DB_MAP = {
+    Vacunos: 'Carnes',
+    Cerdo: 'Cerdo',
+    Pollos: 'Pollos',
+};
 
 // Componente Principal Productos
 
@@ -21,8 +20,32 @@ function Productos() {
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
     const [searchTerm, setSearchTerm] = useState("");
     
-    // Obtiene los productos del array local según la pestaña activa
-    let productsToShow = allProducts[activeCategory] || [];
+    const {
+        data: productos,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ['productos'],
+        queryFn: async () => {
+            const { data } = await api.get('/productos');
+            return data;
+        },
+    });
+
+    const productosNormalizados = (productos || []).map((p) => ({
+        id: p.id,
+        name: p.nombre,
+        description: p.precio != null ? `$${p.precio}` : '',
+        image: p.imagen_url || null,
+        categoria: p.categoria || null,
+    }));
+
+    let productsToShow = productosNormalizados;
+
+    if (activeCategory) {
+        const dbCategory = CATEGORY_DB_MAP[activeCategory] || activeCategory;
+        productsToShow = productsToShow.filter((product) => product.categoria === dbCategory);
+    }
     
     // Filtrar por búsqueda
     if (searchTerm.trim()) {
@@ -89,7 +112,15 @@ function Productos() {
             </div>
             
             {/* Visualización de Productos */}
-            {productsToShow.length > 0 ? (
+            {isLoading ? (
+                <div className="text-center py-8 sm:py-10 text-lg sm:text-xl text-secondary font-heading px-4">
+                    Cargando productos...
+                </div>
+            ) : isError ? (
+                <div className="text-center py-8 sm:py-10 text-lg sm:text-xl text-secondary font-heading px-4">
+                    Error al cargar productos. Verifica que el backend esté activo.
+                </div>
+            ) : productsToShow.length > 0 ? (
                 <>
                     <div className="text-center mb-3 sm:mb-4 text-xs sm:text-sm text-text-dark/60">
                         Mostrando {productsToShow.length} producto{productsToShow.length !== 1 ? 's' : ''}

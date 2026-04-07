@@ -6,7 +6,7 @@ import About from './Components/About'
 import Productos from './Components/Productos'
 import Footer from './Components/Footer'
 import Contactos from './Components/Contactos'
-import Ofertas from './Components/Ofertas'
+
 import Testimonios from './Components/Testimonios'
 import ProductosAdicionales from './Components/ProductosAdicionales'
 import MetodosPago from './Components/MetodosPago'
