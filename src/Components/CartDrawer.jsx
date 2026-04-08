@@ -10,6 +10,12 @@ const CartDrawer = () => {
 
   const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '549[TU_NUMERO_AQUI]';
 
+  const cleanWhatsAppNumber = useMemo(() => String(whatsappNumber || '').replace(/\D/g, ''), [whatsappNumber]);
+
+  const buildWhatsAppUrl = (text) => {
+    return `https://wa.me/${cleanWhatsAppNumber}?text=${encodeURIComponent(text)}`;
+  };
+
   const message = useMemo(() => {
     const lines = [];
     lines.push('Pedido Granja El Sol');
@@ -42,13 +48,6 @@ const CartDrawer = () => {
     mutationFn: async (payload) => {
       const { data } = await api.post('/pedidos', payload);
       return data;
-    },
-    onSuccess: () => {
-      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
-      clearCart();
-      closeCart();
-      setComentarios('');
     },
   });
 
@@ -127,8 +126,8 @@ const CartDrawer = () => {
               Vaciar
             </button>
             <button
-              onClick={() =>
-                createPedido.mutate({
+              onClick={() => {
+                const payload = {
                   items: items.map((i) => ({
                     ...i,
                     subtotal_item: Number(i.subtotal_item ?? i.subtotal_estimado ?? 0),
@@ -136,8 +135,20 @@ const CartDrawer = () => {
                   })),
                   total_estimado: Number(total || 0),
                   comentarios,
-                })
-              }
+                };
+
+                // Disparar el guardado sin bloquear el hilo del click
+                createPedido.mutate(payload);
+
+                // Limpiar UI antes de navegar (mejor UX y evita doble click)
+                clearCart();
+                closeCart();
+                setComentarios('');
+
+                // Navegación SINCRÓNICA en el mismo gesto del usuario (evita bloqueos de popup en mobile)
+                const url = buildWhatsAppUrl(message);
+                window.location.assign(url);
+              }}
               disabled={items.length === 0 || createPedido.isPending}
               className="bg-primary text-white px-4 py-3 rounded-2xl font-bold hover:bg-secondary transition disabled:opacity-60 flex items-center justify-center gap-2"
             >
