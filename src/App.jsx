@@ -12,6 +12,7 @@ import Testimonios from './Components/Testimonios'
 import ProductosAdicionales from './Components/ProductosAdicionales'
 import MetodosPago from './Components/MetodosPago'
 import Admin from './pages/Admin';
+import CartDrawer from './Components/CartDrawer';
 
 ReactGA.initialize('G-GLJTCBRGXT');
 
@@ -21,25 +22,28 @@ const App = () => {
     }, []);
 
     return (
-        <Routes>
-            <Route
-                path="/"
-                element={
-                    <div>
-                        <Navbar />
-                        <Carrousel />
-                        <Productos />
-                        <ProductosAdicionales />
-                        <Testimonios />
-                        <About />
-                        <Contactos />
-                        <MetodosPago />
-                        <Footer />
-                    </div>
-                }
-            />
-            <Route path="/admin" element={<Admin />} />
-        </Routes>
+        <>
+            <Routes>
+                <Route
+                    path="/"
+                    element={
+                        <div>
+                            <Navbar />
+                            <Carrousel />
+                            <Productos />
+                            <ProductosAdicionales />
+                            <Testimonios />
+                            <About />
+                            <Contactos />
+                            <MetodosPago />
+                            <Footer />
+                        </div>
+                    }
+                />
+                <Route path="/admin" element={<Admin />} />
+            </Routes>
+            <CartDrawer />
+        </>
     );
 }
 

@@ -38,6 +38,7 @@ function Productos() {
         description: p.precio != null ? `$${p.precio}` : '',
         image: p.imagen_url || null,
         categoria: p.categoria || null,
+        peso_promedio_unidad: p.peso_promedio_unidad,
     }));
 
     let productsToShow = productosNormalizados;
