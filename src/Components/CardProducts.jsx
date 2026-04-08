@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Heart } from 'lucide-react';
+import { ChevronDown, ChevronUp, Heart } from 'lucide-react';
 import { useProductCard } from '../hooks/useProductCard';
 import { useCart } from '../context/CartContext.jsx';
 
@@ -18,6 +18,60 @@ const CardProducts = ({ products }) => {
     return tipoUnidad === 'kg' ? '0.25' : '1';
   };
 
+  const getStep = (tipoUnidad) => (tipoUnidad === 'kg' ? 0.25 : 1);
+  const getMin = (tipoUnidad) => (tipoUnidad === 'kg' ? 0.25 : 1);
+
+  const parseQty = (raw) => {
+    if (raw === '' || raw == null) return null;
+    const n = Number(String(raw).replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const normalizeOnBlur = (id, tipoUnidad) => {
+    const raw = qtyById[id];
+    if (raw === undefined) return;
+
+    const parsed = parseQty(raw);
+    if (parsed == null) {
+      setQtyById((prev) => ({ ...prev, [id]: tipoUnidad === 'kg' ? '0.25' : '1' }));
+      return;
+    }
+
+    if (tipoUnidad === 'kg') {
+      const min = 0.25;
+      const clamped = parsed < min ? min : parsed;
+      const normalized = Math.round(clamped / 0.25) * 0.25;
+      setQtyById((prev) => ({ ...prev, [id]: normalized.toFixed(2) }));
+      return;
+    }
+
+    const min = 1;
+    const clamped = parsed < min ? min : parsed;
+    const normalized = Math.floor(clamped);
+    setQtyById((prev) => ({ ...prev, [id]: String(normalized) }));
+  };
+
+  const adjustQty = (id, tipoUnidad, deltaSteps) => {
+    const step = getStep(tipoUnidad);
+    const min = getMin(tipoUnidad);
+    const currentRaw = getQty(id, tipoUnidad);
+    const current = parseQty(currentRaw);
+
+    const base = current == null ? min : current;
+    const next = base + deltaSteps * step;
+
+    if (tipoUnidad === 'kg') {
+      const clamped = next < min ? min : next;
+      const normalized = Math.round(clamped / 0.25) * 0.25;
+      setQtyById((prev) => ({ ...prev, [id]: normalized.toFixed(2) }));
+      return;
+    }
+
+    const clamped = next < min ? min : next;
+    const normalized = Math.floor(clamped);
+    setQtyById((prev) => ({ ...prev, [id]: String(normalized) }));
+  };
+
   const parsePrice = (value) => {
     const raw = String(value || '').replace(/[^0-9.,-]/g, '').replace(',', '.');
     const n = Number(raw);
@@ -25,10 +79,17 @@ const CardProducts = ({ products }) => {
   };
 
   const getPlaceholderImage = (index, name) => {
-    const colors = ['bg-gradient-to-br from-primary to-secondary', 'bg-gradient-to-br from-secondary to-primary', 'bg-gradient-to-br from-accent-positive to-primary', 'bg-gradient-to-br from-text-dark to-secondary'];
+    const colors = [
+      'bg-gradient-to-br from-primary to-secondary',
+      'bg-gradient-to-br from-secondary to-primary',
+      'bg-gradient-to-br from-accent-positive to-primary',
+      'bg-gradient-to-br from-text-dark to-secondary',
+    ];
     const color = colors[index % colors.length];
     return (
-      <div className={`w-full h-40 sm:h-48 md:h-56 rounded-t-2xl sm:rounded-t-3xl flex items-center justify-center text-4xl sm:text-5xl md:text-6xl font-extrabold text-text-light ${color}`}>
+      <div
+        className={`w-full h-40 sm:h-48 md:h-56 rounded-t-2xl sm:rounded-t-3xl flex items-center justify-center text-4xl sm:text-5xl md:text-6xl font-extrabold text-text-light ${color}`}
+      >
         {name ? name.substring(0, 1) : 'P'}
       </div>
     );
@@ -85,7 +146,7 @@ const CardProducts = ({ products }) => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 sm:mb-4">
                 <select
                   value={getUnitType(elem.id)}
                   onChange={(e) => {
@@ -99,15 +160,45 @@ const CardProducts = ({ products }) => {
                   <option value="unid">Unidades</option>
                 </select>
 
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={getUnitType(elem.id) === 'kg' ? 0.25 : 1}
-                  step={getUnitType(elem.id) === 'kg' ? 0.25 : 1}
-                  value={getQty(elem.id, getUnitType(elem.id))}
-                  onChange={(e) => setQtyById((prev) => ({ ...prev, [elem.id]: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold"
-                />
+                <div className="w-full flex items-stretch rounded-xl border-2 border-gray-200 overflow-hidden">
+                  <div className="flex-1 flex items-center justify-center">
+                    <input
+                      type="text"
+                      inputMode={getUnitType(elem.id) === 'kg' ? 'decimal' : 'numeric'}
+                      pattern={getUnitType(elem.id) === 'kg' ? undefined : '[0-9]*'}
+                      value={getQty(elem.id, getUnitType(elem.id))}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setQtyById((prev) => ({ ...prev, [elem.id]: next }));
+                      }}
+                      onBlur={() => normalizeOnBlur(elem.id, getUnitType(elem.id))}
+                      className="w-full px-3 py-2 focus:outline-none text-sm font-bold"
+                      aria-label="Cantidad"
+                    />
+                  </div>
+
+                  <div className="flex flex-col border-l-2 border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => adjustQty(elem.id, getUnitType(elem.id), 1)}
+                      className="w-11 h-7 flex items-center justify-center"
+                      aria-label="Incrementar"
+                      tabIndex={-1}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <div className="h-px bg-gray-200" />
+                    <button
+                      type="button"
+                      onClick={() => adjustQty(elem.id, getUnitType(elem.id), -1)}
+                      className="w-11 h-7 flex items-center justify-center"
+                      aria-label="Decrementar"
+                      tabIndex={-1}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <button
@@ -122,7 +213,7 @@ const CardProducts = ({ products }) => {
                   });
                   if (result.ok) openCart();
                 }}
-                className="bg-primary w-full py-2.5 rounded-xl text-white text-sm sm:text-base font-bold shadow-lg font-heading cursor-pointer"
+                className="bg-primary w-full py-3.5 rounded-xl text-white text-sm sm:text-base font-bold shadow-lg font-heading cursor-pointer"
               >
                 Agregar al carrito
               </button>

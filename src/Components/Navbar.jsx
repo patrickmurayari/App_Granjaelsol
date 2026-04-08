@@ -68,9 +68,28 @@ function Navbar() {
                     </div>
                 </div>
 
-                <div className="md:hidden"> {/* Mostrar solo en dispositivos móviles */}
-                    {/* Ícono de menú con hover text-primary */}
-                    <button className="text-text-dark hover:text-primary focus:outline-none" onClick={toggleMenu}>
+                <div className="md:hidden flex items-center gap-2"> {/* Mostrar solo en dispositivos móviles */}
+                    <button
+                        onClick={openCart}
+                        className="relative text-text-dark focus:outline-none w-11 h-11 flex items-center justify-center"
+                        aria-label="Abrir carrito"
+                        type="button"
+                    >
+                        <ShoppingCart className="h-6 w-6" />
+                        {count > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center">
+                                {count}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Ícono de menú */}
+                    <button
+                        className="text-text-dark focus:outline-none w-11 h-11 flex items-center justify-center"
+                        onClick={toggleMenu}
+                        aria-label="Abrir menú"
+                        type="button"
+                    >
                         {menuOpen ? (
                             <X className="h-6 w-6" />
                         ) : (
