@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import ReactGA from 'react-ga4';
+import { Route, Routes } from 'react-router-dom';
 import Navbar from './Components/Navbar';
 import Carrousel from './Components/Carrousel'
 import About from './Components/About'
@@ -10,6 +11,7 @@ import Contactos from './Components/Contactos'
 import Testimonios from './Components/Testimonios'
 import ProductosAdicionales from './Components/ProductosAdicionales'
 import MetodosPago from './Components/MetodosPago'
+import Admin from './pages/Admin';
 
 ReactGA.initialize('G-GLJTCBRGXT');
 
@@ -19,17 +21,25 @@ const App = () => {
     }, []);
 
     return (
-        <div>
-            <Navbar />
-            <Carrousel />
-            <Productos />
-            <ProductosAdicionales />
-            <Testimonios />
-            <About />
-            <Contactos />
-            <MetodosPago />
-            <Footer />
-        </div>
+        <Routes>
+            <Route
+                path="/"
+                element={
+                    <div>
+                        <Navbar />
+                        <Carrousel />
+                        <Productos />
+                        <ProductosAdicionales />
+                        <Testimonios />
+                        <About />
+                        <Contactos />
+                        <MetodosPago />
+                        <Footer />
+                    </div>
+                }
+            />
+            <Route path="/admin" element={<Admin />} />
+        </Routes>
     );
 }
 
