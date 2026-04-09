@@ -5,10 +5,11 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import {
   Package, ShoppingCart, Plus, LogOut, Home, ChevronDown, ChevronUp,
-  Clock, CheckCircle, Loader2, AlertCircle, X, ToggleLeft, ToggleRight
+  Clock, CheckCircle, Loader2, AlertCircle, X, ToggleLeft, ToggleRight,
+  Calculator, DollarSign, FileText, Calendar, CreditCard
 } from 'lucide-react';
 
-const TABS = ['Productos', 'Pedidos', 'Crear Producto'];
+const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja'];
 
 const ESTADOS = {
   pendiente: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
@@ -34,6 +35,14 @@ const Admin = () => {
     peso_promedio_unidad: '',
     descripcion: '',
     imagen_url: '',
+  });
+
+  // Form state para cierre de caja
+  const [cierreForm, setCierreForm] = useState({
+    efectivo: '',
+    tarjeta: '',
+    gastos: '',
+    notas: '',
   });
 
   // Redirigir si no está autenticado
@@ -131,6 +140,52 @@ const Admin = () => {
       await queryClient.invalidateQueries({ queryKey: ['pedidos'] });
     },
   });
+
+  // Query de cierres
+  const {
+    data: cierres,
+    isLoading: loadingCierres,
+    isError: errorCierres,
+  } = useQuery({
+    queryKey: ['cierres'],
+    queryFn: async () => {
+      const { data } = await api.get('/cierres?limite=7');
+      return data;
+    },
+  });
+
+  // Mutación para guardar cierre
+  const saveCierreMutation = useMutation({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/cierres', payload);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cierres'] });
+      setCierreForm({ efectivo: '', tarjeta: '', gastos: '', notas: '' });
+    },
+  });
+
+  // Detectar cierre de hoy para edición
+  const hoy = new Date().toISOString().split('T')[0];
+  const cierreHoy = cierres?.find((c) => c.fecha === hoy);
+
+  // Cargar cierre de hoy en el formulario si existe
+  useEffect(() => {
+    if (cierreHoy) {
+      setCierreForm({
+        efectivo: cierreHoy.monto_efectivo?.toString() || '',
+        tarjeta: cierreHoy.monto_tarjeta?.toString() || '',
+        gastos: cierreHoy.gastos_diarios?.toString() || '',
+        notas: cierreHoy.notas || '',
+      });
+    }
+  }, [cierreHoy]);
+
+  const submitCierre = (e) => {
+    e.preventDefault();
+    saveCierreMutation.mutate(cierreForm);
+  };
 
   const openEdit = (p) => {
     setEditing(p);
@@ -551,6 +606,205 @@ const Admin = () => {
                 )}
               </button>
             </form>
+          </div>
+        )}
+
+        {activeTab === 'Cierre de Caja' && (
+          <div className="space-y-6">
+            {/* Formulario de cierre */}
+            <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-4 sm:p-6 max-w-lg mx-auto">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">
+                    Cierre de Caja
+                  </h2>
+                  <p className="text-xs sm:text-sm text-text-dark/60">
+                    {cierreHoy ? 'Editando cierre de hoy' : 'Nuevo cierre del día'}
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={submitCierre} className="space-y-4">
+                {/* Campos numéricos grandes */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-text-dark mb-2">
+                      <DollarSign className="w-4 h-4 inline mr-1" />
+                      Efectivo
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cierreForm.efectivo}
+                      onChange={(e) => setCierreForm({ ...cierreForm, efectivo: e.target.value })}
+                      className="w-full px-4 py-4 sm:py-5 text-xl sm:text-2xl font-bold text-center rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-text-dark mb-2">
+                      <CreditCard className="w-4 h-4 inline mr-1" />
+                      Tarjeta/Posnet
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cierreForm.tarjeta}
+                      onChange={(e) => setCierreForm({ ...cierreForm, tarjeta: e.target.value })}
+                      className="w-full px-4 py-4 sm:py-5 text-xl sm:text-2xl font-bold text-center rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-text-dark mb-2">
+                      <FileText className="w-4 h-4 inline mr-1" />
+                      Gastos
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cierreForm.gastos}
+                      onChange={(e) => setCierreForm({ ...cierreForm, gastos: e.target.value })}
+                      className="w-full px-4 py-4 sm:py-5 text-xl sm:text-2xl font-bold text-center rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Total calculado */}
+                <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
+                  <span className="text-xs sm:text-sm text-text-dark/60">Total del día:</span>
+                  <span className="text-xl sm:text-2xl font-extrabold text-primary ml-2">
+                    ${(
+                      (Number(cierreForm.efectivo) || 0) +
+                      (Number(cierreForm.tarjeta) || 0) -
+                      (Number(cierreForm.gastos) || 0)
+                    ).toLocaleString('es-AR')}
+                  </span>
+                </div>
+
+                {/* Notas opcionales */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-text-dark mb-2">
+                    Notas (opcional)
+                  </label>
+                  <textarea
+                    value={cierreForm.notas}
+                    onChange={(e) => setCierreForm({ ...cierreForm, notas: e.target.value })}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm resize-none"
+                    rows="2"
+                    placeholder="Observaciones del día..."
+                  />
+                </div>
+
+                {saveCierreMutation.isError && (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    Error al guardar. Intenta nuevamente.
+                  </div>
+                )}
+
+                {saveCierreMutation.isSuccess && (
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    {cierreHoy ? 'Cierre actualizado correctamente.' : 'Cierre guardado correctamente.'}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={saveCierreMutation.isPending}
+                  className="w-full bg-primary text-white py-4 sm:py-5 rounded-xl font-bold text-base sm:text-lg hover:bg-secondary transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {saveCierreMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      Guardar Cierre
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Historial de cierres */}
+            <div className="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden">
+              <div className="p-4 border-b border-gray-100">
+                <h3 className="text-base sm:text-lg font-heading font-extrabold text-text-dark flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Últimos 7 Cierres
+                </h3>
+              </div>
+
+              {loadingCierres ? (
+                <div className="p-6 text-center text-text-dark/60 flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Cargando historial...
+                </div>
+              ) : errorCierres ? (
+                <div className="p-6 text-center text-red-600">Error al cargar historial.</div>
+              ) : cierres?.length === 0 ? (
+                <div className="p-6 text-center text-text-dark/60">No hay cierres registrados.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-xs sm:text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Fecha</th>
+                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Efectivo</th>
+                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Tarjeta</th>
+                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Gastos</th>
+                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cierres?.map((c) => {
+                        const total = (c.monto_efectivo || 0) + (c.monto_tarjeta || 0) - (c.gastos_diarios || 0);
+                        const esHoy = c.fecha === hoy;
+                        return (
+                          <tr
+                            key={c.id}
+                            className={`border-t border-gray-100 ${esHoy ? 'bg-primary/5' : ''}`}
+                          >
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">
+                              {new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-AR', {
+                                weekday: 'short',
+                                day: '2-digit',
+                                month: 'short',
+                              })}
+                              {esHoy && (
+                                <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                                  Hoy
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold text-green-700">
+                              ${c.monto_efectivo?.toLocaleString('es-AR') || 0}
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold text-blue-700">
+                              ${c.monto_tarjeta?.toLocaleString('es-AR') || 0}
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold text-red-700">
+                              -${c.gastos_diarios?.toLocaleString('es-AR') || 0}
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-primary">
+                              ${total.toLocaleString('es-AR')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
