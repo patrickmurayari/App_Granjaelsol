@@ -5,12 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../api/api";
 import CardProducts from "./CardProducts";
 
-const CATEGORIES = ['Vacunos', 'Cerdo', 'Pollos']; 
+const CATEGORIES = ['Vacunos', 'Cerdo', 'Pollos', 'Achuras']; 
 
 const CATEGORY_DB_MAP = {
     Vacunos: 'Carnes',
     Cerdo: 'Cerdo',
     Pollos: 'Pollos',
+    Achuras: 'Achuras',
 };
 
 // Componente Principal Productos
@@ -136,18 +137,6 @@ function Productos() {
                     }
                 </div>
             )}
-
-            {/* Botón de Pedido */}
-            <div className="mt-10 sm:mt-16 flex justify-center px-4">
-                <Link to="contactos" spy={true} smooth={true} offset={-100} duration={500}>
-                    {/* Botón adaptado al estilo de tu código original (bg-orange-200, hover:bg-red-900) */}
-                    <button
-                        className="bg-primary w-full sm:w-60 py-2.5 sm:py-3 rounded-xl items-center text-white text-lg sm:text-xl font-bold hover:bg-secondary transition duration-300 shadow-lg font-heading"
-                    >
-                        Hacer un Pedido 📞
-                    </button>
-                </Link>
-            </div>
         </div>
     );
 }
