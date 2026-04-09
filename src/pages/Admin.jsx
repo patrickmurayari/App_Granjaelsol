@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 import {
   Package, ShoppingCart, Plus, LogOut, Home, ChevronDown, ChevronUp,
-  Clock, CheckCircle, Loader2, AlertCircle, X
+  Clock, CheckCircle, Loader2, AlertCircle, X, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 const TABS = ['Productos', 'Pedidos', 'Crear Producto'];
@@ -24,6 +24,7 @@ const Admin = () => {
   const [editing, setEditing] = useState(null);
   const [precio, setPrecio] = useState('');
   const [expandedPedido, setExpandedPedido] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
 
   // Form state para crear producto
   const [newProduct, setNewProduct] = useState({
@@ -82,6 +83,24 @@ const Admin = () => {
       setPrecio('');
     },
   });
+
+  // Mutación para toggle disponibilidad
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, disponible }) => {
+      const { data } = await api.put(`/productos/${id}`, { disponible });
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['productos'] });
+      setTogglingId(null);
+    },
+  });
+
+  const handleToggleDisponible = (p) => {
+    setTogglingId(p.id);
+    const nuevoEstado = p.disponible === false ? true : false;
+    toggleMutation.mutate({ id: p.id, disponible: nuevoEstado });
+  };
 
   // Mutación para crear producto
   const createProductMutation = useMutation({
@@ -228,26 +247,58 @@ const Admin = () => {
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Nombre</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Categoría</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Precio</th>
+                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Stock</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((p) => (
-                        <tr key={p.id} className="border-t border-gray-100">
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80">{p.id}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-medium">{p.nombre}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80 hidden sm:table-cell">{p.categoria || '-'}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-bold">{p.precio != null ? `$${p.precio}` : '-'}</td>
-                          <td className="px-3 sm:px-4 py-2 sm:py-3">
-                            <button
-                              onClick={() => openEdit(p)}
-                              className="bg-primary text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-secondary transition text-xs sm:text-sm"
-                            >
-                              Editar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {rows.map((p) => {
+                        const isDisponible = p.disponible !== false;
+                        const isToggling = togglingId === p.id;
+                        return (
+                          <tr
+                            key={p.id}
+                            className={`border-t border-gray-100 transition-opacity ${!isDisponible ? 'opacity-50 bg-gray-50' : ''}`}
+                          >
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80">{p.id}</td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-medium">
+                              {p.nombre}
+                              {!isDisponible && <span className="ml-2 text-xs text-red-500 font-bold">(Sin stock)</span>}
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80 hidden sm:table-cell">{p.categoria || '-'}</td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-bold">{p.precio != null ? `$${p.precio}` : '-'}</td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3">
+                              <button
+                                onClick={() => handleToggleDisponible(p)}
+                                disabled={isToggling}
+                                className={`flex items-center gap-1 px-2 py-1 rounded-lg transition text-xs font-bold ${
+                                  isDisponible
+                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                } ${isToggling ? 'opacity-50 cursor-wait' : ''}`}
+                                title={isDisponible ? 'Click para deshabilitar' : 'Click para habilitar'}
+                              >
+                                {isToggling ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : isDisponible ? (
+                                  <ToggleRight className="w-5 h-5" />
+                                ) : (
+                                  <ToggleLeft className="w-5 h-5" />
+                                )}
+                                <span className="hidden sm:inline">{isDisponible ? 'On' : 'Off'}</span>
+                              </button>
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3">
+                              <button
+                                onClick={() => openEdit(p)}
+                                className="bg-primary text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-secondary transition text-xs sm:text-sm"
+                              >
+                                Editar
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

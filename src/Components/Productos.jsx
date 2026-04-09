@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Search, X } from "lucide-react";
-import { Link } from "react-scroll";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api/api";
 import CardProducts from "./CardProducts";
@@ -40,9 +39,11 @@ function Productos() {
         image: p.imagen_url || null,
         categoria: p.categoria || null,
         peso_promedio_unidad: p.peso_promedio_unidad,
+        disponible: p.disponible,
     }));
 
-    let productsToShow = productosNormalizados;
+    // Filtrar productos no disponibles (solo mostrar disponibles)
+    let productsToShow = productosNormalizados.filter((p) => p.disponible !== false);
 
     if (activeCategory) {
         const dbCategory = CATEGORY_DB_MAP[activeCategory] || activeCategory;
