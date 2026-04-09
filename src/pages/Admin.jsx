@@ -766,7 +766,7 @@ const Admin = () => {
                     </thead>
                     <tbody>
                       {cierres?.map((c) => {
-                        const total = (c.monto_efectivo || 0) + (c.monto_tarjeta || 0) - (c.gastos_diarios || 0);
+                        const total = c.total_calculado || 0;
                         const esHoy = c.fecha === hoy;
                         return (
                           <tr
@@ -774,11 +774,14 @@ const Admin = () => {
                             className={`border-t border-gray-100 ${esHoy ? 'bg-primary/5' : ''}`}
                           >
                             <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">
-                              {new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-AR', {
-                                weekday: 'short',
-                                day: '2-digit',
-                                month: 'short',
-                              })}
+                              {(() => {
+                                const fecha = c.fecha instanceof Date ? c.fecha : new Date(c.fecha);
+                                return fecha.toLocaleDateString('es-AR', {
+                                  weekday: 'short',
+                                  day: '2-digit',
+                                  month: 'short',
+                                });
+                              })()}
                               {esHoy && (
                                 <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
                                   Hoy
