@@ -12,7 +12,9 @@ import Testimonios from './Components/Testimonios'
 import ProductosAdicionales from './Components/ProductosAdicionales'
 import MetodosPago from './Components/MetodosPago'
 import Admin from './pages/Admin';
+import Login from './pages/Login';
 import CartDrawer from './Components/CartDrawer';
+import { AuthProvider } from './context/AuthContext';
 
 ReactGA.initialize('G-GLJTCBRGXT');
 
@@ -22,7 +24,7 @@ const App = () => {
     }, []);
 
     return (
-        <>
+        <AuthProvider>
             <Routes>
                 <Route
                     path="/"
@@ -40,10 +42,11 @@ const App = () => {
                         </div>
                     }
                 />
+                <Route path="/login" element={<Login />} />
                 <Route path="/admin" element={<Admin />} />
             </Routes>
             <CartDrawer />
-        </>
+        </AuthProvider>
     );
 }
 
