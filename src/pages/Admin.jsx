@@ -6,7 +6,7 @@ import api from '../api/api';
 import {
   Package, ShoppingCart, Plus, LogOut, Home, ChevronDown, ChevronUp,
   Clock, CheckCircle, Loader2, AlertCircle, X, ToggleLeft, ToggleRight,
-  Calculator, DollarSign, FileText, Calendar, CreditCard
+  Calculator, DollarSign, FileText, Calendar, CreditCard, Pencil
 } from 'lucide-react';
 
 const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja'];
@@ -44,6 +44,7 @@ const Admin = () => {
     gastos: '',
     notas: '',
   });
+  const [editingCierreId, setEditingCierreId] = useState(null);
 
   // Redirigir si no está autenticado
   useEffect(() => {
@@ -156,13 +157,21 @@ const Admin = () => {
 
   // Mutación para guardar cierre
   const saveCierreMutation = useMutation({
-    mutationFn: async (payload) => {
-      const { data } = await api.post('/cierres', payload);
-      return data;
+    mutationFn: async ({ payload, id }) => {
+      if (id) {
+        // Actualizar cierre existente por ID
+        const { data } = await api.put(`/cierres/${id}`, payload);
+        return data;
+      } else {
+        // Crear o actualizar cierre del día
+        const { data } = await api.post('/cierres', payload);
+        return data;
+      }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cierres'] });
       setCierreForm({ efectivo: '', tarjeta: '', gastos: '', notas: '' });
+      setEditingCierreId(null);
     },
   });
 
@@ -184,7 +193,22 @@ const Admin = () => {
 
   const submitCierre = (e) => {
     e.preventDefault();
-    saveCierreMutation.mutate(cierreForm);
+    saveCierreMutation.mutate({ payload: cierreForm, id: editingCierreId });
+  };
+
+  const handleEditCierre = (c) => {
+    setEditingCierreId(c.id);
+    setCierreForm({
+      efectivo: c.monto_efectivo?.toString() || '',
+      tarjeta: c.monto_tarjeta?.toString() || '',
+      gastos: c.gastos_diarios?.toString() || '',
+      notas: c.notas || '',
+    });
+  };
+
+  const cancelEditCierre = () => {
+    setEditingCierreId(null);
+    setCierreForm({ efectivo: '', tarjeta: '', gastos: '', notas: '' });
   };
 
   const openEdit = (p) => {
@@ -617,14 +641,22 @@ const Admin = () => {
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                   <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">
                     Cierre de Caja
                   </h2>
                   <p className="text-xs sm:text-sm text-text-dark/60">
-                    {cierreHoy ? 'Editando cierre de hoy' : 'Nuevo cierre del día'}
+                    {editingCierreId ? 'Editando cierre existente' : cierreHoy ? 'Editando cierre de hoy' : 'Nuevo cierre del día'}
                   </p>
                 </div>
+                {editingCierreId && (
+                  <button
+                    onClick={cancelEditCierre}
+                    className="text-gray-400 hover:text-gray-600 transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
 
               <form onSubmit={submitCierre} className="space-y-4">
@@ -727,7 +759,7 @@ const Admin = () => {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      Guardar Cierre
+                      {editingCierreId ? 'Actualizar Cierre' : 'Guardar Cierre'}
                     </>
                   )}
                 </button>
@@ -762,6 +794,7 @@ const Admin = () => {
                         <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Tarjeta</th>
                         <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Gastos</th>
                         <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Total</th>
+                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -799,6 +832,15 @@ const Admin = () => {
                             </td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-primary">
                               ${total.toLocaleString('es-AR')}
+                            </td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3">
+                              <button
+                                onClick={() => handleEditCierre(c)}
+                                className="bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-primary/20 transition text-xs sm:text-sm flex items-center gap-1"
+                              >
+                                <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span className="hidden sm:inline">Editar</span>
+                              </button>
                             </td>
                           </tr>
                         );
