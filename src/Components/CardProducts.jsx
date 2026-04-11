@@ -98,128 +98,142 @@ const CardProducts = ({ products }) => {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8 max-w-7xl mx-auto">
       {products &&
-        products.map((elem, index) => (
-          <div
-            key={elem.id || index}
-            className="relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg h-full flex flex-col"
-          >
-            {/* Imagen Container */}
-            <div className="relative w-full h-40 sm:h-48 md:h-56 overflow-hidden bg-gray-200">
-              {elem.image ? (
-                <img
-                  className="w-full h-full object-cover"
-                  src={elem.image}
-                  alt={elem.name}
-                />
-              ) : (
-                getPlaceholderImage(index, elem.name)
-              )}
-            </div>
-
-            {/* Badge de categoría */}
-            <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-primary text-white px-2 sm:px-4 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-sm font-bold shadow-lg">
-              Premium
-            </div>
-
-            {/* Botón de favorito */}
-            <button
-              onClick={() => toggleFavorite(elem.id)}
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/90 text-primary p-1.5 sm:p-2 rounded-full shadow-lg cursor-pointer"
+        products.map((elem, index) => {
+          const sinStock = elem.disponible === false;
+          return (
+            <div
+              key={elem.id || index}
+              className={`relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg h-full flex flex-col ${sinStock ? 'opacity-60' : ''}`}
             >
-              <Heart
-                size={16}
-                className={`sm:w-5 sm:h-5 ${favorites.has(elem.id) ? "fill-current" : ""}`}
-              />
-            </button>
-
-            {/* Contenido de la tarjeta */}
-            <div className="flex flex-col flex-grow p-3 sm:p-5 md:p-6">
-              {/* Nombre del producto */}
-              <h3 className="text-sm sm:text-lg md:text-xl font-heading font-bold text-text-dark mb-1 sm:mb-2 line-clamp-2">
-                {elem.name}
-              </h3>
-
-              {/* Descripción/Precio */}
-              <div className="flex items-baseline gap-2 mb-2 sm:mb-4">
-                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-primary">
-                  {elem.description}
-                </span>
+              {/* Imagen Container */}
+              <div className="relative w-full h-40 sm:h-48 md:h-56 overflow-hidden bg-gray-200">
+                {elem.image ? (
+                  <img
+                    className={`w-full h-full object-cover ${sinStock ? 'grayscale' : ''}`}
+                    src={elem.image}
+                    alt={elem.name}
+                  />
+                ) : (
+                  <div className={sinStock ? 'grayscale' : ''}>
+                    {getPlaceholderImage(index, elem.name)}
+                  </div>
+                )}
+                {/* Badge SIN STOCK */}
+                {sinStock && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm sm:text-base font-extrabold shadow-lg tracking-wide">
+                      SIN STOCK
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 sm:mb-4">
-                <select
-                  value={getUnitType(elem.id)}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setUnitTypeById((prev) => ({ ...prev, [elem.id]: next }));
-                    setQtyById((prev) => ({ ...prev, [elem.id]: next === 'kg' ? '0.25' : '1' }));
-                  }}
-                  className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold cursor-pointer"
-                >
-                  <option value="kg">Kilogramos</option>
-                  <option value="unid">Unidades</option>
-                </select>
+              {/* Badge de categoría */}
+              <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-primary text-white px-2 sm:px-4 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-sm font-bold shadow-lg">
+                Premium
+              </div>
 
-                <div className="w-full flex items-stretch rounded-xl border-2 border-gray-200 overflow-hidden">
-                  <div className="flex-1 flex items-center justify-center">
-                    <input
-                      type="text"
-                      inputMode={getUnitType(elem.id) === 'kg' ? 'decimal' : 'numeric'}
-                      pattern={getUnitType(elem.id) === 'kg' ? undefined : '[0-9]*'}
-                      value={getQty(elem.id, getUnitType(elem.id))}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setQtyById((prev) => ({ ...prev, [elem.id]: next }));
-                      }}
-                      onBlur={() => normalizeOnBlur(elem.id, getUnitType(elem.id))}
-                      className="w-full px-3 py-2 focus:outline-none text-sm font-bold"
-                      aria-label="Cantidad"
-                    />
-                  </div>
+              {/* Botón de favorito */}
+              <button
+                onClick={() => toggleFavorite(elem.id)}
+                className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/90 text-primary p-1.5 sm:p-2 rounded-full shadow-lg cursor-pointer"
+              >
+                <Heart
+                  size={16}
+                  className={`sm:w-5 sm:h-5 ${favorites.has(elem.id) ? "fill-current" : ""}`}
+                />
+              </button>
 
-                  <div className="flex flex-col border-l-2 border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => adjustQty(elem.id, getUnitType(elem.id), 1)}
-                      className="w-11 h-7 flex items-center justify-center"
-                      aria-label="Incrementar"
-                      tabIndex={-1}
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <div className="h-px bg-gray-200" />
-                    <button
-                      type="button"
-                      onClick={() => adjustQty(elem.id, getUnitType(elem.id), -1)}
-                      className="w-11 h-7 flex items-center justify-center"
-                      aria-label="Decrementar"
-                      tabIndex={-1}
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
+              {/* Contenido de la tarjeta */}
+              <div className="flex flex-col flex-grow p-3 sm:p-5 md:p-6">
+                {/* Nombre del producto */}
+                <h3 className="text-sm sm:text-lg md:text-xl font-heading font-bold text-text-dark mb-1 sm:mb-2 line-clamp-2">
+                  {elem.name}
+                </h3>
+
+                {/* Descripción/Precio */}
+                <div className="flex items-baseline gap-2 mb-2 sm:mb-4">
+                  <span className="text-lg sm:text-2xl md:text-3xl font-bold text-primary">
+                    {elem.description}
+                  </span>
+                </div>
+
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 sm:mb-4 ${sinStock ? 'pointer-events-none opacity-50' : ''}`}>
+                  <select
+                    value={getUnitType(elem.id)}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setUnitTypeById((prev) => ({ ...prev, [elem.id]: next }));
+                      setQtyById((prev) => ({ ...prev, [elem.id]: next === 'kg' ? '0.25' : '1' }));
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold cursor-pointer"
+                  >
+                    <option value="kg">Kilogramos</option>
+                    <option value="unid">Unidades</option>
+                  </select>
+
+                  <div className="w-full flex items-stretch rounded-xl border-2 border-gray-200 overflow-hidden">
+                    <div className="flex-1 flex items-center justify-center">
+                      <input
+                        type="text"
+                        inputMode={getUnitType(elem.id) === 'kg' ? 'decimal' : 'numeric'}
+                        pattern={getUnitType(elem.id) === 'kg' ? undefined : '[0-9]*'}
+                        value={getQty(elem.id, getUnitType(elem.id))}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setQtyById((prev) => ({ ...prev, [elem.id]: next }));
+                        }}
+                        onBlur={() => normalizeOnBlur(elem.id, getUnitType(elem.id))}
+                        className="w-full px-3 py-2 focus:outline-none text-sm font-bold"
+                        aria-label="Cantidad"
+                      />
+                    </div>
+
+                    <div className="flex flex-col border-l-2 border-gray-200">
+                      <button
+                        type="button"
+                        onClick={() => adjustQty(elem.id, getUnitType(elem.id), 1)}
+                        className="w-11 h-7 flex items-center justify-center"
+                        aria-label="Incrementar"
+                        tabIndex={-1}
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <div className="h-px bg-gray-200" />
+                      <button
+                        type="button"
+                        onClick={() => adjustQty(elem.id, getUnitType(elem.id), -1)}
+                        className="w-11 h-7 flex items-center justify-center"
+                        aria-label="Decrementar"
+                        tabIndex={-1}
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={() => {
-                  const result = addItem({
-                    id: elem.id,
-                    nombre: elem.name,
-                    precio_unitario: parsePrice(elem.description),
-                    cantidad: getQty(elem.id, getUnitType(elem.id)),
-                    tipo_unidad: getUnitType(elem.id),
-                    peso_promedio_unidad: elem.peso_promedio_unidad,
-                  });
-                  if (result.ok) openCart();
-                }}
-                className="bg-primary w-full py-3.5 rounded-xl text-white text-sm sm:text-base font-bold shadow-lg font-heading cursor-pointer"
-              >
-                Agregar al carrito
-              </button>
+                <button
+                  disabled={sinStock}
+                  onClick={sinStock ? undefined : () => {
+                    const result = addItem({
+                      id: elem.id,
+                      nombre: elem.name,
+                      precio_unitario: parsePrice(elem.description),
+                      cantidad: getQty(elem.id, getUnitType(elem.id)),
+                      tipo_unidad: getUnitType(elem.id),
+                      peso_promedio_unidad: elem.peso_promedio_unidad,
+                    });
+                    if (result.ok) openCart();
+                  }}
+                  className={`w-full py-3.5 rounded-xl text-sm sm:text-base font-bold shadow-lg font-heading ${sinStock ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-white cursor-pointer'}`}
+                >
+                  {sinStock ? 'No disponible' : 'Agregar al carrito'}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
     </div>
   );
 };

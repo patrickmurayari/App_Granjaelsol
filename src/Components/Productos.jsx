@@ -42,8 +42,8 @@ function Productos() {
         disponible: p.disponible,
     }));
 
-    // Filtrar productos no disponibles (solo mostrar disponibles)
-    let productsToShow = productosNormalizados.filter((p) => p.disponible !== false);
+    // Mostrar todos los productos (incluidos los no disponibles)
+    let productsToShow = productosNormalizados;
 
     if (activeCategory) {
         const dbCategory = CATEGORY_DB_MAP[activeCategory] || activeCategory;

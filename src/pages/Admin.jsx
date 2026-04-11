@@ -6,7 +6,7 @@ import api from '../api/api';
 import {
   Package, ShoppingCart, Plus, LogOut, Home, ChevronDown, ChevronUp,
   Clock, CheckCircle, Loader2, AlertCircle, X, ToggleLeft, ToggleRight,
-  Calculator, DollarSign, FileText, Calendar, CreditCard, Pencil
+  Calculator, DollarSign, FileText, Calendar, CreditCard, Pencil, Search
 } from 'lucide-react';
 
 const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja'];
@@ -101,7 +101,17 @@ const Admin = () => {
     },
   });
 
-  const rows = useMemo(() => productos || [], [productos]);
+  const [searchProd, setSearchProd] = useState('');
+
+  const rows = useMemo(() => {
+    const all = productos || [];
+    if (!searchProd.trim()) return all;
+    const term = searchProd.toLowerCase().trim();
+    return all.filter((p) =>
+      p.nombre?.toLowerCase().includes(term) ||
+      p.categoria?.toLowerCase().includes(term)
+    );
+  }, [productos, searchProd]);
 
   // Mutación para actualizar producto
   const updateMutation = useMutation({
@@ -361,6 +371,32 @@ const Admin = () => {
                 Error al cargar productos.
               </div>
             ) : (
+              <>
+              {/* Buscador de productos */}
+              <div className="mb-4 relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Buscar producto por nombre..."
+                  value={searchProd}
+                  onChange={(e) => setSearchProd(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
+                />
+                {searchProd && (
+                  <button
+                    onClick={() => setSearchProd('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {rows.length === 0 && searchProd.trim() ? (
+                <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-8 text-center text-text-dark/60 font-heading">
+                  No se encontraron productos con ese nombre
+                </div>
+              ) : (
               <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-200">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-xs sm:text-sm">
@@ -426,6 +462,8 @@ const Admin = () => {
                   </table>
                 </div>
               </div>
+              )}
+              </>
             )}
           </>
         )}
