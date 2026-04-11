@@ -2,7 +2,7 @@
   "name": "Granja El Sol",
   "short_name": "Granja El Sol",
   "description": "Carnicería y Granja El Sol",
-  "start_url": ".",
+  "start_url": "/admin",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#e11d48",
