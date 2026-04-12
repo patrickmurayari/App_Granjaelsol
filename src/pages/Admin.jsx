@@ -75,15 +75,21 @@ const Admin = () => {
     }
   }, [user, loading, navigate]);
 
+  const [selectedCategory, setSelectedCategory] = useState('Todas');
+
+  const ADMIN_CATEGORIES = ['Todas', 'Carnes', 'Cerdo', 'Pollos', 'Achuras'];
+
   // Query de productos
   const {
     data: productos,
     isLoading: loadingProductos,
     isError: errorProductos,
   } = useQuery({
-    queryKey: ['productos'],
+    queryKey: ['productos', selectedCategory],
     queryFn: async () => {
-      const { data } = await api.get('/productos');
+      const params = {};
+      if (selectedCategory !== 'Todas') params.categoria = selectedCategory;
+      const { data } = await api.get('/productos', { params });
       return data;
     },
   });
@@ -108,8 +114,7 @@ const Admin = () => {
     if (!searchProd.trim()) return all;
     const term = searchProd.toLowerCase().trim();
     return all.filter((p) =>
-      p.nombre?.toLowerCase().includes(term) ||
-      p.categoria?.toLowerCase().includes(term)
+      p.nombre?.toLowerCase().includes(term)
     );
   }, [productos, searchProd]);
 
@@ -372,24 +377,36 @@ const Admin = () => {
               </div>
             ) : (
               <>
-              {/* Buscador de productos */}
-              <div className="mb-4 relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Buscar producto por nombre..."
-                  value={searchProd}
-                  onChange={(e) => setSearchProd(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
-                />
-                {searchProd && (
-                  <button
-                    onClick={() => setSearchProd('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+              {/* Filtros: categoría + buscador */}
+              <div className="mb-4 flex flex-col sm:flex-row gap-3">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => { setSelectedCategory(e.target.value); setSearchProd(''); }}
+                  className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 bg-white cursor-pointer"
+                >
+                  {ADMIN_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Buscar producto por nombre..."
+                    value={searchProd}
+                    onChange={(e) => setSearchProd(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
+                  />
+                  {searchProd && (
+                    <button
+                      onClick={() => setSearchProd('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {rows.length === 0 && searchProd.trim() ? (
