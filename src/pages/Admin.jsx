@@ -35,6 +35,7 @@ const Admin = () => {
     peso_promedio_unidad: '',
     descripcion: '',
     imagen_url: '',
+    es_unidad: false,
   });
 
   // Form state para cierre de caja
@@ -77,7 +78,7 @@ const Admin = () => {
 
   const [selectedCategory, setSelectedCategory] = useState('Todas');
 
-  const ADMIN_CATEGORIES = ['Todas', 'Carnes', 'Cerdo', 'Pollos', 'Achuras'];
+  const ADMIN_CATEGORIES = ['Todas', 'Carnes', 'Cerdo', 'Pollos', 'Achuras', 'Bebidas', 'Snacks', 'Almacén', 'Salsas'];
 
   // Query de productos
   const {
@@ -164,6 +165,7 @@ const Admin = () => {
         peso_promedio_unidad: '',
         descripcion: '',
         imagen_url: '',
+        es_unidad: false,
       });
     },
   });
@@ -423,6 +425,7 @@ const Admin = () => {
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Nombre</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Categoría</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Precio</th>
+                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Tipo</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Stock</th>
                         <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
                       </tr>
@@ -443,6 +446,11 @@ const Admin = () => {
                             </td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80 hidden sm:table-cell">{p.categoria || '-'}</td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-bold">{p.precio != null ? `$${p.precio}` : '-'}</td>
+                            <td className="px-3 sm:px-4 py-2 sm:py-3 hidden sm:table-cell">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold ${p.es_unidad ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {p.es_unidad ? 'Unidad' : 'Peso'}
+                              </span>
+                            </td>
                             <td className="px-3 sm:px-4 py-2 sm:py-3">
                               <button
                                 onClick={() => handleToggleDisponible(p)}
@@ -660,15 +668,45 @@ const Admin = () => {
                 </label>
                 <select
                   value={newProduct.categoria}
-                  onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
+                  onChange={(e) => {
+                    const cat = e.target.value;
+                    const adicionales = ['Bebidas', 'Snacks', 'Almacén', 'Salsas'];
+                    const esAdicional = adicionales.includes(cat);
+                    setNewProduct({ ...newProduct, categoria: cat, es_unidad: esAdicional ? true : newProduct.es_unidad });
+                  }}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
                 >
                   <option value="">Seleccionar...</option>
-                  <option value="Carnes">Carnes (Vacunos)</option>
-                  <option value="Cerdo">Cerdo</option>
-                  <option value="Pollos">Pollos</option>
-                  <option value="Achuras">Achuras</option>
+                  <optgroup label="Carnicería">
+                    <option value="Carnes">Carnes (Vacunos)</option>
+                    <option value="Cerdo">Cerdo</option>
+                    <option value="Pollos">Pollos</option>
+                    <option value="Achuras">Achuras</option>
+                  </optgroup>
+                  <optgroup label="Almacén y Adicionales">
+                    <option value="Bebidas">Bebidas</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Almacén">Almacén</option>
+                    <option value="Salsas">Salsas</option>
+                  </optgroup>
                 </select>
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <label className="text-xs sm:text-sm font-bold text-text-dark">
+                  ¿Venta por unidad?
+                </label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={newProduct.es_unidad}
+                  onClick={() => setNewProduct({ ...newProduct, es_unidad: !newProduct.es_unidad })}
+                  className={`relative inline-flex h-6 sm:h-7 w-11 sm:w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${newProduct.es_unidad ? 'bg-primary' : 'bg-gray-300'}`}
+                >
+                  <span
+                    className={`inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow transition-transform ${newProduct.es_unidad ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
               </div>
 
               <div>

@@ -1,8 +1,49 @@
 import { useMemo, useState } from 'react';
-import { X, Trash2, Send } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { X, Trash2, Send, Beef, ShoppingBag } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../api/api';
 import { useCart } from '../context/CartContext.jsx';
+
+const CartItem = ({ i, removeItem }) => (
+  <div className="border border-gray-200 rounded-2xl p-3 sm:p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <div className="font-bold text-text-dark text-sm sm:text-base truncate">{i.nombre}</div>
+        <div className="text-xs sm:text-sm text-text-dark/70">
+          {i.tipo_unidad === 'kg'
+            ? `${Number(i.cantidad).toFixed(2)} kg`
+            : `${i.cantidad} unid${i.es_unidad ? '' : ` (aprox. ${Number(i.peso_estimado_kg || 0).toFixed(2)} kg)`}`}
+          {' · '}
+          $ {i.precio_unitario} / {i.tipo_unidad === 'kg' ? 'kg' : 'unid'}
+        </div>
+        <div className="font-extrabold text-primary mt-1 text-sm sm:text-base">$ {Number(i.subtotal_item ?? i.subtotal_estimado ?? 0).toFixed(2)}</div>
+      </div>
+      <button
+        onClick={() => removeItem(i.id, i.tipo_unidad)}
+        className="p-2 rounded-xl border border-gray-200 hover:border-primary hover:text-primary transition flex-shrink-0"
+        aria-label="Eliminar"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  </div>
+);
+
+CartItem.propTypes = {
+  i: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    nombre: PropTypes.string,
+    tipo_unidad: PropTypes.string,
+    cantidad: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    es_unidad: PropTypes.bool,
+    peso_estimado_kg: PropTypes.number,
+    precio_unitario: PropTypes.number,
+    subtotal_item: PropTypes.number,
+    subtotal_estimado: PropTypes.number,
+  }).isRequired,
+  removeItem: PropTypes.func.isRequired,
+};
 
 const CartDrawer = () => {
   const { isOpen, closeCart, items, total, removeItem, clearCart } = useCart();
@@ -16,22 +57,36 @@ const CartDrawer = () => {
     return `https://wa.me/${cleanWhatsAppNumber}?text=${encodeURIComponent(text)}`;
   };
 
+  const carniceriaItems = useMemo(() => items.filter((i) => !i.es_unidad), [items]);
+  const almacenItems = useMemo(() => items.filter((i) => i.es_unidad), [items]);
+
   const message = useMemo(() => {
     const lines = [];
     lines.push('Pedido Granja El Sol');
     lines.push('');
 
-    items.forEach((i) => {
-      const unidad = i.tipo_unidad === 'kg' ? 'kg' : 'unid';
-      const cantidad = i.tipo_unidad === 'kg' ? Number(i.cantidad).toFixed(2) : i.cantidad;
-      const subtotalNumber = Number(i.subtotal_item ?? i.subtotal_estimado ?? 0);
-      const subtotal = `$${subtotalNumber.toFixed(2)}`;
-      const pesoAprox =
-        i.tipo_unidad === 'unid' ? ` (aprox. ${Number(i.peso_estimado_kg || 0).toFixed(2)} kg)` : '';
-      lines.push(`- ${cantidad} ${unidad} ${i.nombre}${pesoAprox} - ${subtotal}`);
-    });
+    if (carniceriaItems.length > 0) {
+      lines.push('Carnicería:');
+      carniceriaItems.forEach((i) => {
+        const unidad = i.tipo_unidad === 'kg' ? 'kg' : 'unid';
+        const cantidad = i.tipo_unidad === 'kg' ? Number(i.cantidad).toFixed(2) : i.cantidad;
+        const subtotal = `$${Number(i.subtotal_item ?? i.subtotal_estimado ?? 0).toFixed(2)}`;
+        const pesoAprox = i.tipo_unidad === 'unid' ? ` (aprox. ${Number(i.peso_estimado_kg || 0).toFixed(2)} kg)` : '';
+        lines.push(`- ${cantidad} ${unidad} ${i.nombre}${pesoAprox} - ${subtotal}`);
+      });
+      lines.push('');
+    }
 
-    lines.push('');
+    if (almacenItems.length > 0) {
+      lines.push('Almacén y Adicionales:');
+      almacenItems.forEach((i) => {
+        const cantidad = i.cantidad;
+        const subtotal = `$${Number(i.subtotal_item ?? i.subtotal_estimado ?? 0).toFixed(2)}`;
+        lines.push(`- ${cantidad} unid ${i.nombre} - ${subtotal}`);
+      });
+      lines.push('');
+    }
+
     if (comentarios.trim()) {
       lines.push('Comentarios:');
       lines.push(comentarios.trim());
@@ -42,7 +97,7 @@ const CartDrawer = () => {
     lines.push(`Total: $${Number(total || 0).toFixed(2)}`);
 
     return lines.join('\n');
-  }, [items, total, comentarios]);
+  }, [carniceriaItems, almacenItems, total, comentarios]);
 
   const createPedido = useMutation({
     mutationFn: async (payload) => {
@@ -69,34 +124,39 @@ const CartDrawer = () => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-auto p-4 space-y-3">
+        <div className="flex-1 overflow-auto p-4 space-y-4">
           {items.length === 0 ? (
             <div className="text-center py-10 text-secondary font-heading">El carrito está vacío.</div>
           ) : (
-            items.map((i) => (
-              <div key={`${i.id}-${i.tipo_unidad}`} className="border border-gray-200 rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-bold text-text-dark">{i.nombre}</div>
-                    <div className="text-sm text-text-dark/70">
-                      {i.tipo_unidad === 'kg'
-                        ? `${Number(i.cantidad).toFixed(2)} kg`
-                        : `${i.cantidad} unid (aprox. ${Number(i.peso_estimado_kg || 0).toFixed(2)} kg)`}
-                      {' · '}
-                      $ {i.precio_unitario} / {i.tipo_unidad === 'kg' ? 'kg' : 'unid'}
-                    </div>
-                    <div className="font-extrabold text-primary mt-1">$ {Number(i.subtotal_item ?? i.subtotal_estimado ?? 0).toFixed(2)}</div>
+            <>
+              {carniceriaItems.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Beef className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-heading font-bold text-text-dark/80 uppercase tracking-wide">Carnicería</h3>
                   </div>
-                  <button
-                    onClick={() => removeItem(i.id, i.tipo_unidad)}
-                    className="p-2 rounded-xl border border-gray-200 hover:border-primary hover:text-primary transition"
-                    aria-label="Eliminar"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="space-y-2">
+                    {carniceriaItems.map((i) => (
+                      <CartItem key={`${i.id}-${i.tipo_unidad}`} i={i} removeItem={removeItem} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              )}
+
+              {almacenItems.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShoppingBag className="w-4 h-4 text-secondary" />
+                    <h3 className="text-sm font-heading font-bold text-text-dark/80 uppercase tracking-wide">Almacén y Adicionales</h3>
+                  </div>
+                  <div className="space-y-2">
+                    {almacenItems.map((i) => (
+                      <CartItem key={`${i.id}-${i.tipo_unidad}`} i={i} removeItem={removeItem} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div className="pt-2">
@@ -137,15 +197,12 @@ const CartDrawer = () => {
                   comentarios,
                 };
 
-                // Disparar el guardado sin bloquear el hilo del click
                 createPedido.mutate(payload);
 
-                // Limpiar UI antes de navegar (mejor UX y evita doble click)
                 clearCart();
                 closeCart();
                 setComentarios('');
 
-                // Navegación SINCRÓNICA en el mismo gesto del usuario (evita bloqueos de popup en mobile)
                 const url = buildWhatsAppUrl(message);
                 window.location.assign(url);
               }}

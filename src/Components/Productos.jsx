@@ -39,6 +39,7 @@ function Productos() {
         image: p.imagen_url || null,
         categoria: p.categoria || null,
         peso_promedio_unidad: p.peso_promedio_unidad,
+        es_unidad: p.es_unidad === true,
         disponible: p.disponible,
     }));
 

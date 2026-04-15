@@ -11,7 +11,7 @@ const CardProducts = ({ products }) => {
   const [unitTypeById, setUnitTypeById] = useState({});
   const [qtyById, setQtyById] = useState({});
 
-  const getUnitType = (id) => unitTypeById[id] || 'kg';
+  const getUnitType = (id, esUnidad) => esUnidad ? 'unid' : (unitTypeById[id] || 'kg');
   const getQty = (id, tipoUnidad) => {
     const v = qtyById[id];
     if (v !== undefined && v !== null && v !== '') return v;
@@ -100,13 +100,15 @@ const CardProducts = ({ products }) => {
       {products &&
         products.map((elem, index) => {
           const sinStock = elem.disponible === false;
+          const esUnidad = elem.es_unidad === true;
+          const unitType = getUnitType(elem.id, esUnidad);
           return (
             <div
               key={elem.id || index}
               className={`relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg h-full flex flex-col ${sinStock ? 'opacity-60' : ''}`}
             >
               {/* Imagen Container */}
-              <div className="relative w-full h-40 sm:h-48 md:h-56 overflow-hidden bg-gray-200">
+              <div className={`relative w-full overflow-hidden bg-gray-200 ${esUnidad ? 'h-32 sm:h-40' : 'h-40 sm:h-48 md:h-56'}`}>
                 {elem.image ? (
                   <img
                     className={`w-full h-full object-cover ${sinStock ? 'grayscale' : ''}`}
@@ -130,7 +132,7 @@ const CardProducts = ({ products }) => {
 
               {/* Badge de categoría */}
               <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-primary text-white px-2 sm:px-4 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-sm font-bold shadow-lg">
-                Premium
+                {esUnidad ? 'Unidad' : 'Premium'}
               </div>
 
               {/* Botón de favorito */}
@@ -158,32 +160,34 @@ const CardProducts = ({ products }) => {
                   </span>
                 </div>
 
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 sm:mb-4 ${sinStock ? 'pointer-events-none opacity-50' : ''}`}>
-                  <select
-                    value={getUnitType(elem.id)}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setUnitTypeById((prev) => ({ ...prev, [elem.id]: next }));
-                      setQtyById((prev) => ({ ...prev, [elem.id]: next === 'kg' ? '0.25' : '1' }));
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold cursor-pointer"
-                  >
-                    <option value="kg">Kilogramos</option>
-                    <option value="unid">Unidades</option>
-                  </select>
+                <div className={`${sinStock ? 'pointer-events-none opacity-50' : ''} mb-3 sm:mb-4`}>
+                  {!esUnidad && (
+                    <select
+                      value={unitType}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setUnitTypeById((prev) => ({ ...prev, [elem.id]: next }));
+                        setQtyById((prev) => ({ ...prev, [elem.id]: next === 'kg' ? '0.25' : '1' }));
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold cursor-pointer mb-2"
+                    >
+                      <option value="kg">Kilogramos</option>
+                      <option value="unid">Unidades</option>
+                    </select>
+                  )}
 
-                  <div className="w-full flex items-stretch rounded-xl border-2 border-gray-200 overflow-hidden">
+                  <div className={`flex items-stretch rounded-xl border-2 border-gray-200 overflow-hidden ${esUnidad ? '' : 'sm:grid sm:grid-cols-1'}`}>
                     <div className="flex-1 flex items-center justify-center">
                       <input
                         type="text"
-                        inputMode={getUnitType(elem.id) === 'kg' ? 'decimal' : 'numeric'}
-                        pattern={getUnitType(elem.id) === 'kg' ? undefined : '[0-9]*'}
-                        value={getQty(elem.id, getUnitType(elem.id))}
+                        inputMode={unitType === 'kg' ? 'decimal' : 'numeric'}
+                        pattern={unitType === 'kg' ? undefined : '[0-9]*'}
+                        value={getQty(elem.id, unitType)}
                         onChange={(e) => {
                           const next = e.target.value;
                           setQtyById((prev) => ({ ...prev, [elem.id]: next }));
                         }}
-                        onBlur={() => normalizeOnBlur(elem.id, getUnitType(elem.id))}
+                        onBlur={() => normalizeOnBlur(elem.id, unitType)}
                         className="w-full px-3 py-2 focus:outline-none text-sm font-bold"
                         aria-label="Cantidad"
                       />
@@ -192,7 +196,7 @@ const CardProducts = ({ products }) => {
                     <div className="flex flex-col border-l-2 border-gray-200">
                       <button
                         type="button"
-                        onClick={() => adjustQty(elem.id, getUnitType(elem.id), 1)}
+                        onClick={() => adjustQty(elem.id, unitType, 1)}
                         className="w-11 h-7 flex items-center justify-center"
                         aria-label="Incrementar"
                         tabIndex={-1}
@@ -202,7 +206,7 @@ const CardProducts = ({ products }) => {
                       <div className="h-px bg-gray-200" />
                       <button
                         type="button"
-                        onClick={() => adjustQty(elem.id, getUnitType(elem.id), -1)}
+                        onClick={() => adjustQty(elem.id, unitType, -1)}
                         className="w-11 h-7 flex items-center justify-center"
                         aria-label="Decrementar"
                         tabIndex={-1}
@@ -220,9 +224,10 @@ const CardProducts = ({ products }) => {
                       id: elem.id,
                       nombre: elem.name,
                       precio_unitario: parsePrice(elem.description),
-                      cantidad: getQty(elem.id, getUnitType(elem.id)),
-                      tipo_unidad: getUnitType(elem.id),
+                      cantidad: getQty(elem.id, unitType),
+                      tipo_unidad: unitType,
                       peso_promedio_unidad: elem.peso_promedio_unidad,
+                      es_unidad: esUnidad,
                     });
                     if (result.ok) openCart();
                   }}

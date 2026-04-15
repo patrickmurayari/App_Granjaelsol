@@ -62,7 +62,7 @@ const reducer = (state, action) => {
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const addItem = ({ id, nombre, precio_unitario, cantidad, tipo_unidad, peso_promedio_unidad }) => {
+  const addItem = ({ id, nombre, precio_unitario, cantidad, tipo_unidad, peso_promedio_unidad, es_unidad }) => {
     const normalizedCantidad = normalizeCantidad(cantidad, tipo_unidad);
     if (normalizedCantidad == null) return { ok: false };
 
@@ -87,6 +87,7 @@ export const CartProvider = ({ children }) => {
         cantidad: normalizedCantidad,
         tipo_unidad,
         peso_promedio_unidad: pesoProm,
+        es_unidad: es_unidad === true,
         peso_estimado_kg,
         subtotal_estimado,
         subtotal_item: subtotal_estimado,
