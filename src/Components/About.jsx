@@ -15,10 +15,10 @@ function About() {
                 
                 {/* INYECTAMOS EL TAG <img> CON LOS ESTILOS MODERNOS */}
                 <div className="w-full md:w-5/12 pr-0 md:pr-10 mt-0 md:mt-0 flex justify-center">
-                    <img 
-                        src={logo} 
-                        alt="Logo Original Granja El Sol" 
-                        className="w-64 h-64 md:w-96 md:h-96 border-4 rounded-3xl object-cover shadow-2xl border-primary"
+                    <img
+                        src={logo}
+                        alt="Logo Original Granja El Sol"
+                        className="w-64 h-64 md:w-96 md:h-96 rounded-3xl object-cover"
                     />
                 </div>
 

@@ -39,9 +39,9 @@ function CompactCard({ elem }) {
   };
 
   return (
-    <div className={`relative flex-shrink-0 w-40 sm:w-48 bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow snap-start ${sinStock ? 'opacity-60' : ''}`}>
-      {/* Imagen */}
-      <div className="relative w-full h-28 sm:h-36 overflow-hidden bg-gray-200">
+    <div className={`relative flex-shrink-0 w-40 sm:w-48 bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow snap-start ${sinStock ? 'opacity-60' : ''}`} style={{ minHeight: '280px' }}>
+      {/* Imagen - contenedor más alto con más aire */}
+      <div className="relative w-full h-36 sm:h-52 overflow-hidden bg-gray-200">
         {elem.image ? (
           <img
             className={`w-full h-full object-cover ${sinStock ? 'grayscale' : ''}`}
@@ -60,22 +60,22 @@ function CompactCard({ elem }) {
           </div>
         )}
         {esUnidad && !sinStock && (
-          <span className="absolute top-1.5 left-1.5 bg-secondary text-white px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold shadow">U</span>
+          <span className="absolute top-1 left-1 bg-secondary text-white px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold shadow">U</span>
         )}
       </div>
 
-      {/* Info */}
-      <div className="p-2 sm:p-3 flex flex-col gap-1">
-        <h3 className="text-xs sm:text-sm font-bold text-text-dark line-clamp-1 leading-tight">{elem.name}</h3>
-        <span className="text-sm sm:text-lg font-extrabold text-primary">{elem.description}</span>
+      {/* Info - más espacio vertical y aire */}
+      <div className="p-3 sm:p-4 flex flex-col gap-2 flex-1">
+        <h3 className="text-xs sm:text-sm font-bold text-text-dark line-clamp-1 leading-tight pt-1">{elem.name}</h3>
+        <span className="text-sm sm:text-lg font-extrabold text-primary pb-1">{elem.description}</span>
 
-        {/* Cantidad + Agregar */}
-        <div className={`flex items-center gap-1.5 mt-1 ${sinStock ? 'pointer-events-none opacity-50' : ''}`}>
-          <div className="flex items-stretch rounded-lg border border-gray-200 overflow-hidden">
+        {/* Cantidad + Agregar - reposicionados al fondo, ancho igual 50/50 */}
+        <div className={`flex items-center gap-2 mt-auto pt-2 ${sinStock ? 'pointer-events-none opacity-50' : ''}`}>
+          <div className="flex-1 flex items-stretch rounded-lg border border-gray-200 overflow-hidden">
             <button
               type="button"
               onClick={() => adjustQty(-1)}
-              className="w-7 h-7 flex items-center justify-center active:bg-gray-100"
+              className="w-6 h-8 flex items-center justify-center active:bg-gray-100"
               aria-label="Decrementar"
             >
               <ChevronDown className="w-3.5 h-3.5" />
@@ -93,13 +93,13 @@ function CompactCard({ elem }) {
                 const n = parseInt(qty, 10);
                 setQty(n >= 1 ? String(n) : '1');
               }}
-              className="w-8 text-center text-xs font-bold focus:outline-none"
+              className="flex-1 min-w-0 text-center text-xs font-bold focus:outline-none"
               aria-label="Cantidad"
             />
             <button
               type="button"
               onClick={() => adjustQty(1)}
-              className="w-7 h-7 flex items-center justify-center active:bg-gray-100"
+              className="w-6 h-8 flex items-center justify-center active:bg-gray-100"
               aria-label="Incrementar"
             >
               <ChevronUp className="w-3.5 h-3.5" />
@@ -109,7 +109,7 @@ function CompactCard({ elem }) {
           <button
             disabled={sinStock}
             onClick={handleAdd}
-            className={`flex-1 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold min-h-[28px] ${
+            className={`flex-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold min-h-[32px] ${
               sinStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary text-white active:scale-95 transition-transform'
             }`}
           >
@@ -118,10 +118,10 @@ function CompactCard({ elem }) {
         </div>
       </div>
 
-      {/* Favorito */}
+      {/* Favorito - reposicionado más arriba */}
       <button
         onClick={() => toggleFavorite(elem.id)}
-        className="absolute top-1.5 right-1.5 bg-white/80 text-primary p-1 rounded-full shadow cursor-pointer"
+        className="absolute top-1 right-1 bg-white/80 text-primary p-1 rounded-full shadow cursor-pointer"
       >
         <Heart size={12} className={favorites.has(elem.id) ? 'fill-current' : ''} />
       </button>

@@ -102,41 +102,44 @@ function Carrousel() {
                             key={index}
                             className="w-full h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex-shrink-0 snap-center relative overflow-hidden"
                         >
-                            {/* Imagen de fondo con zoom effect */}
-                            <div className="absolute inset-0 overflow-hidden">
+                            {/* Imagen de fondo estática (sin zoom) */}
+                            <div className="absolute inset-0">
                                 <img
                                     src={slide.url}
                                     alt={slide.title}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                    className="w-full h-full object-cover"
+                                    style={{ willChange: 'auto' }}
+                                    loading={index === 0 ? 'eager' : 'lazy'}
+                                    draggable={false}
                                 />
                             </div>
 
-                            {/* Overlay gradiente mejorado */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60"></div>
+                            {/* Overlay gradiente - decorativo, sin interacción */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60 pointer-events-none"></div>
 
                             {/* Contenido con animación */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 md:p-8">
-                                {/* Icono animado con efecto navideño */}
-                                <div className="text-6xl md:text-8xl mb-6 animate-bounce">
+                                {/* Icono decorativo */}
+                                <div className="text-6xl md:text-8xl mb-6 pointer-events-none select-none">
                                     {slide.icon}
                                 </div>
 
-                                {/* Título con efecto */}
-                                <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-extrabold text-text-light mb-4 drop-shadow-2xl leading-tight max-w-4xl">
+                                {/* Título */}
+                                <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-extrabold text-text-light mb-4 drop-shadow-2xl leading-tight max-w-4xl pointer-events-none select-none">
                                     {slide.title}
                                 </h1>
 
                                 {/* Línea decorativa */}
-                                <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-full mb-6"></div>
+                                <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-full mb-6 pointer-events-none"></div>
 
                                 {/* Subtítulo */}
-                                <p className="text-lg md:text-2xl lg:text-3xl font-body text-text-light drop-shadow-lg max-w-3xl">
+                                <p className="text-lg md:text-2xl lg:text-3xl font-body text-text-light drop-shadow-lg max-w-3xl pointer-events-none select-none">
                                     {slide.subtitle}
                                 </p>
                             </div>
 
-                            {/* Indicador de slide */}
-                            <div className="absolute bottom-6 right-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
+                            {/* Indicador de slide - decorativo */}
+                            <div className="absolute bottom-6 right-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm pointer-events-none select-none">
                                 {index + 1} / {slides.length}
                             </div>
                         </div>
@@ -161,12 +164,12 @@ function Carrousel() {
                     <ChevronRight size={28} />
                 </button>
 
-                {/* Indicadores de progreso */}
-                <div className="absolute bottom-6 left-6 flex gap-2 z-20">
+                {/* Indicadores de progreso - decorativos, sin interacción */}
+                <div className="absolute bottom-6 left-6 flex gap-2 z-20 pointer-events-none select-none">
                     {slides.map((_, index) => (
                         <div
                             key={index}
-                            className="h-1 bg-white/40 rounded-full transition-all duration-300 hover:bg-white/80 cursor-pointer"
+                            className="h-1 bg-white/40 rounded-full"
                             style={{
                                 width: index === 0 ? "24px" : "8px",
                             }}
@@ -188,8 +191,8 @@ function Carrousel() {
                 </div>
             </div>
 
-            {/* Decoración inferior */}
-            <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary"></div>
+            {/* Decoración inferior - sin interacción */}
+            <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary pointer-events-none"></div>
         </div>
     );
 }
