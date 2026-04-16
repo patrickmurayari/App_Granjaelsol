@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { Link } from "react-scroll";
-import logo2 from "../img/foto21.png";
-import logo3 from "../img/foto31.png";
-import logo5 from "../img/foto5.jpg";
-import logo6 from "../img/foto6.jpg";
+import logo2 from "../img/foto21.webp";
+import logo3 from "../img/foto31.webp";
+import logo5 from "../img/foto5.webp";
+import logo6 from "../img/foto6.webp";
 
 const slides = [
     { url: logo2, title: "Precios accesibles", subtitle: "Calidad garantizada, directamente a tu mesa.", icon: "💰" },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Menu, X, Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
-import logo from "../img/logoo.png"
+import logo from "../img/logoo.webp"
 import { CONTACT_INFO } from '../constants/contactInfo';
 import { scrollToSection } from '../utils/scrollUtils';
 import { useCart } from '../context/CartContext.jsx';
