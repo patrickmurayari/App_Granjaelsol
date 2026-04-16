@@ -110,6 +110,8 @@ function Carrousel() {
                                     className="w-full h-full object-cover"
                                     style={{ willChange: 'auto' }}
                                     loading={index === 0 ? 'eager' : 'lazy'}
+                                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                                    decoding={index === 0 ? 'sync' : 'async'}
                                     draggable={false}
                                 />
                             </div>

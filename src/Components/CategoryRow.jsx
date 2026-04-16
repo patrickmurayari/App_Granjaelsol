@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Heart } from 'lucide-react';
 import { useProductCard } from '../hooks/useProductCard';
 import { useCart } from '../context/CartContext.jsx';
+import { getOptimizedImageUrl } from '../utils/imageOptimize';
 import PropTypes from 'prop-types';
 
 function CompactCard({ elem }) {
@@ -40,14 +41,15 @@ function CompactCard({ elem }) {
 
   return (
     <div className={`relative flex-shrink-0 w-40 sm:w-48 bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow snap-start ${sinStock ? 'opacity-60' : ''}`} style={{ minHeight: '280px' }}>
-      {/* Imagen - contenedor más alto con más aire */}
-      <div className="relative w-full h-36 sm:h-52 overflow-hidden bg-gray-200">
+      {/* Imagen - contenedor con aspect-ratio para prevenir CLS */}
+      <div className="relative w-full aspect-[3/4] sm:aspect-[3/4] overflow-hidden bg-gray-200">
         {elem.image ? (
           <img
             className={`w-full h-full object-cover ${sinStock ? 'grayscale' : ''}`}
-            src={elem.image}
+            src={getOptimizedImageUrl(elem.image, 400)}
             alt={elem.name}
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl font-extrabold text-text-light ${sinStock ? 'grayscale' : ''}`}>

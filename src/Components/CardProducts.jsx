@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { ChevronDown, ChevronUp, Heart } from 'lucide-react';
 import { useProductCard } from '../hooks/useProductCard';
 import { useCart } from '../context/CartContext.jsx';
+import { getOptimizedImageUrl } from '../utils/imageOptimize';
 
 const CardProducts = ({ products }) => {
   const { favorites, toggleFavorite } = useProductCard();
@@ -107,13 +108,15 @@ const CardProducts = ({ products }) => {
               key={elem.id || index}
               className={`relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg h-full flex flex-col ${sinStock ? 'opacity-60' : ''}`}
             >
-              {/* Imagen Container */}
-              <div className={`relative w-full overflow-hidden bg-gray-200 ${esUnidad ? 'h-32 sm:h-40' : 'h-40 sm:h-48 md:h-56'}`}>
+              {/* Imagen Container - aspect-ratio para prevenir CLS */}
+              <div className={`relative w-full overflow-hidden bg-gray-200 ${esUnidad ? 'aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[3/4]'}`}>
                 {elem.image ? (
                   <img
                     className={`w-full h-full object-cover ${sinStock ? 'grayscale' : ''}`}
-                    src={elem.image}
+                    src={getOptimizedImageUrl(elem.image, 400)}
                     alt={elem.name}
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className={sinStock ? 'grayscale' : ''}>
