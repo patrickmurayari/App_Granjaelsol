@@ -1,21 +1,11 @@
 /**
- * Optimiza URLs de imágenes de Supabase Storage usando transformaciones nativas.
- * Reemplaza `/object/public/` por `/render/image/public/` y añade parámetros
- * de width, quality y format=webp para reducir drásticamente el peso transferido.
- *
- * Si la URL no es de Supabase Storage, la devuelve sin cambios.
+ * Devuelve la URL original de la imagen sin transformaciones.
+ * Las transformaciones de Supabase Storage requieren plan Pro (no activo).
  *
  * @param {string} url  - URL original de la imagen
- * @param {number} width - Ancho deseado en px (default 400)
- * @returns {string} URL optimizada
+ * @param {number} _width - Ancho deseado (ignorado, mantiene compatibilidad)
+ * @returns {string} URL original sin cambios
  */
-export function getOptimizedImageUrl(url, width = 400) {
-  if (!url || typeof url !== 'string') return url;
-
-  // Solo transformar URLs de Supabase Storage
-  if (!url.includes('/object/public/')) return url;
-
-  const optimized = url.replace('/object/public/', '/render/image/public/');
-  const separator = optimized.includes('?') ? '&' : '?';
-  return `${optimized}${separator}width=${width}&quality=75&format=webp`;
+export function getOptimizedImageUrl(url) {
+  return url;
 }
