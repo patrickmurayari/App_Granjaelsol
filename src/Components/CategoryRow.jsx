@@ -78,7 +78,7 @@ function CompactCard({ elem }) {
               type="button"
               onClick={() => adjustQty(-1)}
               className="w-6 h-8 flex items-center justify-center active:bg-gray-100"
-              aria-label="Decrementar"
+              aria-label="Disminuir cantidad"
             >
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
@@ -102,7 +102,7 @@ function CompactCard({ elem }) {
               type="button"
               onClick={() => adjustQty(1)}
               className="w-6 h-8 flex items-center justify-center active:bg-gray-100"
-              aria-label="Incrementar"
+              aria-label="Aumentar cantidad"
             >
               <ChevronUp className="w-3.5 h-3.5" />
             </button>
@@ -114,6 +114,7 @@ function CompactCard({ elem }) {
             className={`flex-1 py-2 rounded-lg text-[10px] sm:text-xs font-bold min-h-[32px] ${
               sinStock ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary text-white active:scale-95 transition-transform'
             }`}
+            aria-label={sinStock ? 'Producto no disponible' : 'Agregar al carrito'}
           >
             {sinStock ? 'No disp.' : 'Agregar'}
           </button>
@@ -124,6 +125,7 @@ function CompactCard({ elem }) {
       <button
         onClick={() => toggleFavorite(elem.id)}
         className="absolute top-1 right-1 bg-white/80 text-primary p-1 rounded-full shadow cursor-pointer"
+        aria-label="Agregar a favoritos"
       >
         <Heart size={12} className={favorites.has(elem.id) ? 'fill-current' : ''} />
       </button>

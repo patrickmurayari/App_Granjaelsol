@@ -61,9 +61,9 @@ function Productos() {
     return (
         <div className="md:mt-28 bg-gradient-to-b from-white to-gray-50 px-2 sm:px-4 md:px-8 py-12 sm:py-16" id="productos">
             <div className="text-center mb-8 sm:mb-12">
-                <h1 className="text-center text-3xl sm:text-4xl md:text-5xl font-heading font-extrabold mb-3 sm:mb-4 text-text-dark">
+                <h2 className="text-center text-3xl sm:text-4xl md:text-5xl font-heading font-extrabold mb-3 sm:mb-4 text-text-dark">
                     Nuestros Productos
-                </h1>
+                </h2>
                 <p className="text-base sm:text-lg text-text-dark/70 font-body max-w-2xl mx-auto px-2">
                     Selecciona entre nuestras categorías premium de carnes frescas
                 </p>
@@ -84,6 +84,7 @@ function Productos() {
                         <button
                             onClick={() => setSearchTerm("")}
                             className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
+                            aria-label="Limpiar búsqueda"
                         >
                             <X className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>

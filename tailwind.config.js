@@ -9,7 +9,7 @@ export default {
       colors: {
         // Colores de la paleta sugerida
         'primary': '#8B0000',     // Borgoña Rico (Acento Principal)
-        'secondary': '#A52A2A',   // Marrón Cobre (Tierra/Rústico)
+        'secondary': '#8B2020',   // Marrón Cobre oscuro (Tierra/Rústico) - WCAG AA compliant
         'base': '#FAF9F6',        // Blanco Roto/Crema (Fondo de Contenido)
         'text-dark': '#333333',   // Gris Oscuro Carbón (Texto General)
         'accent-positive': '#90EE90', // Verde Menta Suave (Ofertas/Fresco)

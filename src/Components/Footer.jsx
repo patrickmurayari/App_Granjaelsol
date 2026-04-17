@@ -50,18 +50,19 @@ function Footer() {
                         <h3 className="text-xl font-heading font-bold mb-4 text-text-light">Síguenos</h3>
                         <div className="flex gap-4">
                             <a href={CONTACT_INFO.instagramUrlAlt} target="_blank" rel="noopener noreferrer" 
-                               className="text-text-light/80 hover:text-text-light transition transform hover:scale-110">
+                               className="text-text-light/80 hover:text-text-light transition transform hover:scale-110"
+                               aria-label="Instagram">
                                 <Instagram className="w-6 h-6" />
                             </a>
                             <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" 
-                               className="text-text-light/80 hover:text-text-light transition transform hover:scale-110">
+                               className="text-text-light/80 hover:text-text-light transition transform hover:scale-110"
+                               aria-label="Facebook">
                                 <Facebook className="w-6 h-6" />
                             </a>
                             <a href={CONTACT_INFO.tiktokUrl} target="_blank" rel="noopener noreferrer" 
                                className="text-text-light/80 hover:text-text-light transition transform hover:scale-110"
                                aria-label="TikTok"
-                               title="TikTok"
-                            >
+                               title="TikTok">
                                 <svg
                                     viewBox="0 0 24 24"
                                     className="w-6 h-6"
@@ -72,7 +73,8 @@ function Footer() {
                                 </svg>
                             </a>
                             <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" 
-                               className="text-text-light/80 hover:text-text-light transition transform hover:scale-110">
+                               className="text-text-light/80 hover:text-text-light transition transform hover:scale-110"
+                               aria-label="WhatsApp">
                                 <Send className="w-6 h-6" />
                             </a>
                         </div>
@@ -92,6 +94,7 @@ function Footer() {
                             onClick={scrollToTop}
                             className="flex items-center gap-2 bg-text-light/10 hover:bg-text-light/20 text-text-light px-4 py-2 rounded-full transition duration-300 transform hover:scale-110"
                             title="Volver al inicio"
+                            aria-label="Volver al inicio"
                         >
                             <ArrowUp className="w-4 h-4" />
                             <span className="text-xs">Volver al inicio</span>

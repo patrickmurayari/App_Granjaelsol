@@ -4,9 +4,9 @@ import logo from "../img/logoo.webp"
 function About() {
     return (
         <div className="bg-gradient-to-b from-gray-50 to-white px-4 md:px-16 py-16 relative overflow-hidden" id="about">
-            <h1 className="text-center text-4xl md:text-5xl font-heading font-extrabold mb-4 text-text-dark">
+            <h2 className="text-center text-4xl md:text-5xl font-heading font-extrabold mb-4 text-text-dark">
                 ¿Quiénes Somos?
-            </h1>
+            </h2>
             <p className="text-center text-lg text-text-dark/70 font-body max-w-2xl mx-auto mb-12">
                 Conoce la historia y valores de Granja El Sol
             </p>
@@ -19,6 +19,8 @@ function About() {
                         src={logo}
                         alt="Logo Original Granja El Sol"
                         className="w-64 h-64 md:w-96 md:h-96 rounded-3xl object-cover"
+                        loading="lazy"
+                        decoding="async"
                     />
                 </div>
 

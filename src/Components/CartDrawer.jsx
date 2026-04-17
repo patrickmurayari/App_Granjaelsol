@@ -22,7 +22,7 @@ const CartItem = ({ i, removeItem }) => (
       <button
         onClick={() => removeItem(i.id, i.tipo_unidad)}
         className="p-2 rounded-xl border border-gray-200 hover:border-primary hover:text-primary transition flex-shrink-0"
-        aria-label="Eliminar"
+        aria-label="Eliminar producto del carrito"
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -118,7 +118,7 @@ const CartDrawer = () => {
           <button
             onClick={closeCart}
             className="p-2 rounded-xl hover:bg-gray-100 transition"
-            aria-label="Cerrar"
+            aria-label="Cerrar carrito"
           >
             <X className="w-5 h-5" />
           </button>
@@ -182,6 +182,7 @@ const CartDrawer = () => {
               onClick={clearCart}
               disabled={items.length === 0}
               className="px-4 py-3 rounded-2xl border-2 border-gray-200 font-bold hover:border-primary transition disabled:opacity-60"
+              aria-label="Vaciar carrito"
             >
               Vaciar
             </button>
@@ -208,6 +209,7 @@ const CartDrawer = () => {
               }}
               disabled={items.length === 0 || createPedido.isPending}
               className="bg-primary text-white px-4 py-3 rounded-2xl font-bold hover:bg-secondary transition disabled:opacity-60 flex items-center justify-center gap-2"
+              aria-label="Enviar pedido por WhatsApp"
             >
               <Send className="w-4 h-4" />
               {createPedido.isPending ? 'Enviando...' : 'WhatsApp'}

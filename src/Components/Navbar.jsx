@@ -118,15 +118,18 @@ function Navbar() {
                         <li className="md:hidden border-t border-gray-200 pt-3 mt-3 w-full">
                             <div className="flex items-center justify-center space-x-6">
                                 <a href={CONTACT_INFO.instagramUrlAlt} target="_blank" rel="noopener noreferrer" 
-                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125">
+                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125"
+                                   aria-label="Instagram">
                                     <Instagram className="h-5 w-5" />
                                 </a>
                                 <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" 
-                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125">
+                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125"
+                                   aria-label="Facebook">
                                     <Facebook className="h-5 w-5" />
                                 </a>
                                 <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" 
-                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125">
+                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125"
+                                   aria-label="WhatsApp">
                                     <Send className="h-5 w-5" /> 
                                 </a>
                             </div>
@@ -151,15 +154,18 @@ function Navbar() {
                         </button>
                         {/* Sustitución de imágenes por íconos Lucide, usando hover:text-primary */}
                         <a href={CONTACT_INFO.instagramUrl} target="_blank" rel="noopener noreferrer" 
-                        className="text-text-dark hover:text-primary transition duration-300">
+                        className="text-text-dark hover:text-primary transition duration-300"
+                        aria-label="Instagram">
                             <Instagram className="h-5 w-5" />
                         </a>
                         <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" 
-                        className="text-text-dark hover:text-primary transition duration-300">
+                        className="text-text-dark hover:text-primary transition duration-300"
+                        aria-label="Facebook">
                             <Facebook className="h-5 w-5" />
                         </a>
                         <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" 
-                        className="text-text-dark hover:text-primary transition duration-300">
+                        className="text-text-dark hover:text-primary transition duration-300"
+                        aria-label="WhatsApp">
                             <Send className="h-5 w-5" /> 
                         </a>
                     </div>

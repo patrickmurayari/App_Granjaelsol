@@ -142,6 +142,7 @@ const CardProducts = ({ products }) => {
               <button
                 onClick={() => toggleFavorite(elem.id)}
                 className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/90 text-primary p-1.5 sm:p-2 rounded-full shadow-lg cursor-pointer"
+                aria-label="Agregar a favoritos"
               >
                 <Heart
                   size={16}
@@ -165,18 +166,22 @@ const CardProducts = ({ products }) => {
 
                 <div className={`${sinStock ? 'pointer-events-none opacity-50' : ''} mb-3 sm:mb-4`}>
                   {!esUnidad && (
-                    <select
-                      value={unitType}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setUnitTypeById((prev) => ({ ...prev, [elem.id]: next }));
-                        setQtyById((prev) => ({ ...prev, [elem.id]: next === 'kg' ? '0.25' : '1' }));
-                      }}
-                      className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold cursor-pointer mb-2"
-                    >
-                      <option value="kg">Kilogramos</option>
-                      <option value="unid">Unidades</option>
-                    </select>
+                    <>
+                      <label htmlFor={`unit-type-${elem.id}`} className="sr-only">Tipo de unidad para {elem.name}</label>
+                      <select
+                        id={`unit-type-${elem.id}`}
+                        value={unitType}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setUnitTypeById((prev) => ({ ...prev, [elem.id]: next }));
+                          setQtyById((prev) => ({ ...prev, [elem.id]: next === 'kg' ? '0.25' : '1' }));
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-bold cursor-pointer mb-2"
+                      >
+                        <option value="kg">Kilogramos</option>
+                        <option value="unid">Unidades</option>
+                      </select>
+                    </>
                   )}
 
                   <div className={`flex items-stretch rounded-xl border-2 border-gray-200 overflow-hidden ${esUnidad ? '' : 'sm:grid sm:grid-cols-1'}`}>
@@ -201,7 +206,7 @@ const CardProducts = ({ products }) => {
                         type="button"
                         onClick={() => adjustQty(elem.id, unitType, 1)}
                         className="w-11 h-7 flex items-center justify-center"
-                        aria-label="Incrementar"
+                        aria-label="Aumentar cantidad"
                         tabIndex={-1}
                       >
                         <ChevronUp className="w-4 h-4" />
@@ -211,7 +216,7 @@ const CardProducts = ({ products }) => {
                         type="button"
                         onClick={() => adjustQty(elem.id, unitType, -1)}
                         className="w-11 h-7 flex items-center justify-center"
-                        aria-label="Decrementar"
+                        aria-label="Disminuir cantidad"
                         tabIndex={-1}
                       >
                         <ChevronDown className="w-4 h-4" />
@@ -235,6 +240,7 @@ const CardProducts = ({ products }) => {
                     if (result.ok) openCart();
                   }}
                   className={`w-full py-3.5 rounded-xl text-sm sm:text-base font-bold shadow-lg font-heading ${sinStock ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-white cursor-pointer'}`}
+                  aria-label={sinStock ? 'Producto no disponible' : 'Agregar al carrito'}
                 >
                   {sinStock ? 'No disponible' : 'Agregar al carrito'}
                 </button>

@@ -85,11 +85,13 @@ function Testimonios() {
                                                 src={testimonio.foto}
                                                 alt={testimonio.nombre}
                                                 className="w-14 h-14 rounded-full border-2 border-primary/30 object-cover"
+                                                loading="lazy"
+                                                decoding="async"
                                             />
                                             <div className="flex-grow">
-                                                <h4 className="font-heading font-bold text-text-dark text-sm">
+                                                <h3 className="font-heading font-bold text-text-dark text-sm">
                                                     {testimonio.nombre}
-                                                </h4>
+                                                </h3>
                                                 <p className="text-xs text-text-dark/60 font-body">
                                                     {testimonio.rol}
                                                 </p>
@@ -113,12 +115,12 @@ function Testimonios() {
                     </Swiper>
 
                     {/* Botones de navegación */}
-                    <button className="swiper-button-prev-testimonios absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-8 z-20 w-10 h-10 md:w-12 md:h-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-300 group">
+                    <button className="swiper-button-prev-testimonios absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-8 z-20 w-10 h-10 md:w-12 md:h-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-300 group" aria-label="Testimonio anterior">
                         <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <button className="swiper-button-next-testimonios absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-8 z-20 w-10 h-10 md:w-12 md:h-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-300 group">
+                    <button className="swiper-button-next-testimonios absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-8 z-20 w-10 h-10 md:w-12 md:h-12 bg-primary hover:bg-primary/90 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-300 group" aria-label="Testimonio siguiente">
                         <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>

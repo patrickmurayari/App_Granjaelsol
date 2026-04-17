@@ -40,15 +40,15 @@ function Contactos() {
         // Usamos bg-base o un color contrastante como bg-gray-100/50 si About ya es bg-base
         <div className='bg-base p-4 md:p-12' id="contactos">
             <div className='max-w-screen-xl mx-auto'>
-                <h1 className='text-center text-4xl md:text-5xl font-heading font-extrabold text-text-dark mt-8 mb-12'>
+                <h2 className='text-center text-4xl md:text-5xl font-heading font-extrabold text-text-dark mt-8 mb-12'>
                     Contáctanos
-                </h1>
+                </h2>
 
                 <div className="flex flex-col md:flex-row gap-8">
                     
                     {/* COLUMNA IZQUIERDA: Mapa de Ubicación */}
                     <div className='w-full md:w-1/2'>
-                        <h2 className="text-2xl font-heading font-bold mb-4 text-primary">Nuestra Ubicación</h2>
+                        <h3 className="text-2xl font-heading font-bold mb-4 text-primary">Nuestra Ubicación</h3>
                         <div className="rounded-xl overflow-hidden shadow-2xl border-4 border-primary">
                             <iframe
                                 src={mapEmbedUrl}
@@ -65,7 +65,7 @@ function Contactos() {
 
                     {/* COLUMNA DERECHA: Información de Contacto */}
                     <div className="w-full md:w-1/2 p-6 md:p-8 rounded-xl bg-text-light shadow-xl border-l-4 border-primary">
-                        <h2 className="text-2xl font-heading font-bold mb-6 text-primary">Detalles de Contacto</h2>
+                        <h3 className="text-2xl font-heading font-bold mb-6 text-primary">Detalles de Contacto</h3>
 
                         <div className='text-text-dark text-lg md:text-xl space-y-6 font-body'>
                             
@@ -91,6 +91,7 @@ function Contactos() {
                                             onClick={() => copyToClipboard(CONTACT_INFO.phoneRaw, 'phone')}
                                             className="text-primary hover:text-secondary transition p-1 rounded hover:bg-white"
                                             title="Copiar número"
+                                            aria-label="Copiar número de teléfono"
                                         >
                                             {copiedPhone ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                         </button>
@@ -111,6 +112,7 @@ function Contactos() {
                                             onClick={() => copyToClipboard(CONTACT_INFO.email, 'email')}
                                             className="text-primary hover:text-secondary transition p-1 rounded hover:bg-white flex-shrink-0"
                                             title="Copiar email"
+                                            aria-label="Copiar email"
                                         >
                                             {copiedEmail ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                         </button>
@@ -177,18 +179,19 @@ function Contactos() {
                             <h3 className="text-xl font-heading font-bold mb-4 text-secondary">Síguenos</h3>
                             <div className="flex space-x-6">
                                 <a href={CONTACT_INFO.instagramUrl} target="_blank" rel="noopener noreferrer" 
-                                   className="text-primary hover:text-secondary transition duration-300 transform hover:scale-110">
+                                   className="text-primary hover:text-secondary transition duration-300 transform hover:scale-110"
+                                   aria-label="Instagram">
                                     <Instagram className="h-8 w-8" />
                                 </a>
                                 <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" 
-                                   className="text-primary hover:text-secondary transition duration-300 transform hover:scale-110">
+                                   className="text-primary hover:text-secondary transition duration-300 transform hover:scale-110"
+                                   aria-label="Facebook">
                                     <Facebook className="h-8 w-8" />
                                 </a>
                                 <a href={CONTACT_INFO.tiktokUrl} target="_blank" rel="noopener noreferrer"
                                    className="text-primary hover:text-secondary transition duration-300 transform hover:scale-110"
                                    aria-label="TikTok"
-                                   title="TikTok"
-                                >
+                                   title="TikTok">
                                     <svg
                                         viewBox="0 0 24 24"
                                         className="h-8 w-8"
