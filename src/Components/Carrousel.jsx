@@ -7,10 +7,10 @@ import logo5 from "../img/foto5.webp";
 import logo6 from "../img/foto6.webp";
 
 const slides = [
-    { url: logo2, title: "Precios accesibles", subtitle: "Calidad garantizada, directamente a tu mesa.", icon: "💰" },
-    { url: logo3, title: "¡Visítanos Hoy!", subtitle: "Conoce nuestra amplia variedad de cortes.", icon: "🏪" },
-    { url: logo5, title: "¡Pedi a Domicilio!", subtitle: "Servicio de Delivery disponible.", icon: "🛵" },
-    { url: logo6, title: "Combos y Ofertas", subtitle: "Consulta por nuestras ofertas y combos.", icon: "🎉" },
+    { url: logo2, title: "Precios accesibles", subtitle: "Calidad garantizada, directamente a tu mesa." },
+    { url: logo5, title: "¡Pedi a Domicilio!", subtitle: "Servicio de Delivery disponible."},
+    { url: logo3, title: "¡Visítanos Hoy!", subtitle: "Conoce nuestra amplia variedad de cortes."},
+    { url: logo6, title: "Combos y Ofertas", subtitle: "Consulta por nuestras ofertas y combos."},
 ];
 
 function Carrousel() {
@@ -121,11 +121,6 @@ function Carrousel() {
 
                             {/* Contenido con animación */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 md:p-8">
-                                {/* Icono decorativo */}
-                                <div className="text-6xl md:text-8xl mb-6 pointer-events-none select-none">
-                                    {slide.icon}
-                                </div>
-
                                 {/* Título */}
                                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-extrabold text-text-light mb-4 drop-shadow-2xl leading-tight max-w-4xl pointer-events-none select-none">
                                     {slide.title}
