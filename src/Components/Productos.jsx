@@ -38,7 +38,7 @@ function Productos() {
         description: p.precio != null ? `$${p.precio}` : '',
         image: p.imagen_url || null,
         categoria: p.categoria || null,
-        peso_promedio_unidad: p.peso_promedio_unidad,
+        peso_promedio_unidad: Number(p.peso_promedio_unidad) || 0,
         es_unidad: p.es_unidad === true,
         disponible: p.disponible,
     }));

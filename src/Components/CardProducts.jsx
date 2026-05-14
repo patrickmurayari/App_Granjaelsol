@@ -234,7 +234,7 @@ const CardProducts = ({ products }) => {
                       precio_unitario: parsePrice(elem.description),
                       cantidad: getQty(elem.id, unitType),
                       tipo_unidad: unitType,
-                      peso_promedio_unidad: elem.peso_promedio_unidad,
+                      peso_promedio_unidad: Number(elem.peso_promedio_unidad) || 0,
                       es_unidad: esUnidad,
                     });
                     if (result.ok) openCart();

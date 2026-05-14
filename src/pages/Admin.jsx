@@ -1,294 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/api';
 import {
-  Package, ShoppingCart, Plus, LogOut, Home, ChevronDown, ChevronUp,
-  Clock, CheckCircle, Loader2, AlertCircle, X, ToggleLeft, ToggleRight,
-  Calculator, DollarSign, FileText, Calendar, CreditCard, Pencil, Search
+  Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, Loader2, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja'];
+import ProductsManager from '../components/Admin/ProductsManager';
+import OrdersManager from '../components/Admin/OrdersManager';
+import CreateProduct from '../components/Admin/CreateProduct';
+import CashClosing from '../components/Admin/CashClosing';
+import InventoryManager from '../components/Admin/InventoryManager';
+import RemitosHistory from '../components/Admin/RemitosHistory';
 
-const ESTADOS = {
-  pendiente: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
-  preparando: { label: 'Preparando', color: 'bg-blue-100 text-blue-800 border-blue-300', icon: Loader2 },
-  entregado: { label: 'Entregado', color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle },
+const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos'];
+
+const TAB_ICONS = {
+  'Productos': Package,
+  'Pedidos': ShoppingCart,
+  'Crear Producto': Plus,
+  'Cierre de Caja': Plus,
+  'Inventario': Truck,
+  'Remitos': FileText,
 };
 
 const Admin = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { user, loading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(TABS[0]);
-  const [editing, setEditing] = useState(null);
-  const [precio, setPrecio] = useState('');
-  const [expandedPedido, setExpandedPedido] = useState(null);
-  const [togglingId, setTogglingId] = useState(null);
+  const [toasts, setToasts] = useState([]);
 
-  // Form state para crear producto
-  const [newProduct, setNewProduct] = useState({
-    nombre: '',
-    precio: '',
-    categoria: '',
-    peso_promedio_unidad: '',
-    descripcion: '',
-    imagen_url: '',
-    es_unidad: false,
-  });
-
-  // Form state para cierre de caja
-  const [cierreForm, setCierreForm] = useState({
-    venta_total_balanza: '',
-    venta_posnet: '',
-    venta_transferencias: '',
-    fondo_inicial: '',
-    efectivo_final: '',
-    gastos_del_dia: '',
-    notas: '',
-  });
-  const [editingCierreId, setEditingCierreId] = useState(null);
-
-  // Cálculos automáticos del cierre
-  const calculosCierre = useMemo(() => {
-    const ventaBalanza = Number(cierreForm.venta_total_balanza) || 0;
-    const posnet = Number(cierreForm.venta_posnet) || 0;
-    const transferencias = Number(cierreForm.venta_transferencias) || 0;
-    const fondoInicial = Number(cierreForm.fondo_inicial) || 0;
-    const efectivoFinal = Number(cierreForm.efectivo_final) || 0;
-    const gastos = Number(cierreForm.gastos_del_dia) || 0;
-
-    const ventaEfectivoTeorica = ventaBalanza - posnet - transferencias;
-    const diferenciaCaja = (efectivoFinal - fondoInicial) - (ventaEfectivoTeorica - gastos);
-
-    return {
-      ventaEfectivoTeorica,
-      diferenciaCaja,
-      esPositivo: diferenciaCaja >= 0,
-    };
-  }, [cierreForm]);
-
-  // Redirigir si no está autenticado
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
-
-  const [selectedCategory, setSelectedCategory] = useState('Todas');
-
-  const ADMIN_CATEGORIES = ['Todas', 'Carnes', 'Cerdo', 'Pollos', 'Achuras', 'Bebidas', 'Snacks', 'Almacén', 'Salsas'];
-
-  // Query de productos
-  const {
-    data: productos,
-    isLoading: loadingProductos,
-    isError: errorProductos,
-  } = useQuery({
-    queryKey: ['productos', selectedCategory],
-    queryFn: async () => {
-      const params = {};
-      if (selectedCategory !== 'Todas') params.categoria = selectedCategory;
-      const { data } = await api.get('/productos', { params });
-      return data;
-    },
-  });
-
-  // Query de pedidos
-  const {
-    data: pedidos,
-    isLoading: loadingPedidos,
-    isError: errorPedidos,
-  } = useQuery({
-    queryKey: ['pedidos'],
-    queryFn: async () => {
-      const { data } = await api.get('/pedidos');
-      return data;
-    },
-  });
-
-  const [searchProd, setSearchProd] = useState('');
-
-  const rows = useMemo(() => {
-    const all = productos || [];
-    if (!searchProd.trim()) return all;
-    const term = searchProd.toLowerCase().trim();
-    return all.filter((p) =>
-      p.nombre?.toLowerCase().includes(term)
-    );
-  }, [productos, searchProd]);
-
-  // Mutación para actualizar producto
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }) => {
-      const { data } = await api.put(`/productos/${id}`, payload);
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['productos'] });
-      setEditing(null);
-      setPrecio('');
-    },
-  });
-
-  // Mutación para toggle disponibilidad
-  const toggleMutation = useMutation({
-    mutationFn: async ({ id, disponible }) => {
-      const { data } = await api.put(`/productos/${id}`, { disponible });
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['productos'] });
-      setTogglingId(null);
-    },
-  });
-
-  const handleToggleDisponible = (p) => {
-    setTogglingId(p.id);
-    const nuevoEstado = p.disponible === false ? true : false;
-    toggleMutation.mutate({ id: p.id, disponible: nuevoEstado });
-  };
-
-  // Mutación para crear producto
-  const createProductMutation = useMutation({
-    mutationFn: async (payload) => {
-      const { data } = await api.post('/productos', payload);
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['productos'] });
-      setNewProduct({
-        nombre: '',
-        precio: '',
-        categoria: '',
-        peso_promedio_unidad: '',
-        descripcion: '',
-        imagen_url: '',
-        es_unidad: false,
-      });
-    },
-  });
-
-  // Mutación para actualizar estado de pedido
-  const updatePedidoMutation = useMutation({
-    mutationFn: async ({ id, estado }) => {
-      const { data } = await api.put(`/pedidos/${id}`, { estado });
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pedidos'] });
-    },
-  });
-
-  // Query de cierres
-  const {
-    data: cierres,
-    isLoading: loadingCierres,
-    isError: errorCierres,
-  } = useQuery({
-    queryKey: ['cierres'],
-    queryFn: async () => {
-      const { data } = await api.get('/cierres?limite=7');
-      return data;
-    },
-  });
-
-  // Mutación para guardar cierre
-  const saveCierreMutation = useMutation({
-    mutationFn: async ({ payload, id }) => {
-      if (id) {
-        // Actualizar cierre existente por ID
-        const { data } = await api.put(`/cierres/${id}`, payload);
-        return data;
-      } else {
-        // Crear o actualizar cierre del día
-        const { data } = await api.post('/cierres', payload);
-        return data;
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['cierres'] });
-      setCierreForm({
-        venta_total_balanza: '',
-        venta_posnet: '',
-        venta_transferencias: '',
-        fondo_inicial: '',
-        efectivo_final: '',
-        gastos_del_dia: '',
-        notas: '',
-      });
-      setEditingCierreId(null);
-    },
-  });
-
-  // Detectar cierre de hoy para edición
-  const hoy = new Date().toISOString().split('T')[0];
-  const cierreHoy = cierres?.find((c) => c.fecha === hoy);
-
-  // Cargar cierre de hoy en el formulario si existe
-  useEffect(() => {
-    if (cierreHoy && !editingCierreId) {
-      setCierreForm({
-        venta_total_balanza: cierreHoy.venta_total_balanza?.toString() || '',
-        venta_posnet: cierreHoy.venta_posnet?.toString() || '',
-        venta_transferencias: cierreHoy.venta_transferencias?.toString() || '',
-        fondo_inicial: cierreHoy.fondo_inicial?.toString() || '',
-        efectivo_final: cierreHoy.efectivo_final?.toString() || '',
-        gastos_del_dia: cierreHoy.gastos_del_dia?.toString() || '',
-        notas: cierreHoy.notas || '',
-      });
-    }
-  }, [cierreHoy, editingCierreId]);
-
-  const submitCierre = (e) => {
-    e.preventDefault();
-    saveCierreMutation.mutate({ payload: cierreForm, id: editingCierreId });
-  };
-
-  const handleEditCierre = (c) => {
-    setEditingCierreId(c.id);
-    setCierreForm({
-      venta_total_balanza: c.venta_total_balanza?.toString() || '',
-      venta_posnet: c.venta_posnet?.toString() || '',
-      venta_transferencias: c.venta_transferencias?.toString() || '',
-      fondo_inicial: c.fondo_inicial?.toString() || '',
-      efectivo_final: c.efectivo_final?.toString() || '',
-      gastos_del_dia: c.gastos_del_dia?.toString() || '',
-      notas: c.notas || '',
-    });
-  };
-
-  const cancelEditCierre = () => {
-    setEditingCierreId(null);
-    setCierreForm({
-      venta_total_balanza: '',
-      venta_posnet: '',
-      venta_transferencias: '',
-      fondo_inicial: '',
-      efectivo_final: '',
-      gastos_del_dia: '',
-      notas: '',
-    });
-  };
-
-  const openEdit = (p) => {
-    setEditing(p);
-    setPrecio(p?.precio ?? '');
-  };
-
-  const submitEdit = (e) => {
-    e.preventDefault();
-    if (!editing) return;
-    updateMutation.mutate({
-      id: editing.id,
-      payload: { precio: precio === '' ? null : Number(precio) },
-    });
-  };
-
-  const submitNewProduct = (e) => {
-    e.preventDefault();
-    createProductMutation.mutate(newProduct);
+  const addToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3500);
   };
 
   const handleSignOut = async () => {
@@ -296,16 +42,11 @@ const Admin = () => {
     navigate('/login');
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -316,6 +57,18 @@ const Admin = () => {
   }
 
   if (!user) return null;
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'Productos': return <ProductsManager />;
+      case 'Pedidos': return <OrdersManager />;
+      case 'Crear Producto': return <CreateProduct />;
+      case 'Cierre de Caja': return <CashClosing />;
+      case 'Inventario': return <InventoryManager addToast={addToast} />;
+      case 'Remitos': return <RemitosHistory addToast={addToast} />;
+      default: return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 px-3 sm:px-4 md:px-8 py-4 sm:py-6 md:py-10">
@@ -328,14 +81,16 @@ const Admin = () => {
           <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={() => navigate('/')}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-100 text-text-dark px-3 sm:px-4 py-2 rounded-xl font-bold hover:bg-gray-200 transition text-sm sm:text-base"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white px-3 sm:px-4 py-2 rounded-xl font-bold hover:bg-primary hover:text-white transition text-sm sm:text-base border-2 border-primary"
+              style={{ color: '#8B0000' }}
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Inicio</span>
             </button>
             <button
               onClick={handleSignOut}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-100 text-red-700 px-3 sm:px-4 py-2 rounded-xl font-bold hover:bg-red-200 transition text-sm sm:text-base"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white px-3 sm:px-4 py-2 rounded-xl font-bold hover:bg-red-700 hover:text-white transition text-sm sm:text-base border-2 border-red-700"
+              style={{ color: '#b91c1c' }}
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Salir</span>
@@ -346,7 +101,7 @@ const Admin = () => {
         {/* Tabs */}
         <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
           {TABS.map((tab) => {
-            const Icon = tab === 'Productos' ? Package : tab === 'Pedidos' ? ShoppingCart : Plus;
+            const Icon = TAB_ICONS[tab] || Plus;
             return (
               <button
                 key={tab}
@@ -365,774 +120,29 @@ const Admin = () => {
         </div>
 
         {/* Contenido de tabs */}
-        {activeTab === 'Productos' && (
-          <>
-            {loadingProductos ? (
-              <div className="text-center py-10 text-lg text-secondary font-heading flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Cargando productos...
-              </div>
-            ) : errorProductos ? (
-              <div className="text-center py-10 text-lg text-red-600 font-heading flex items-center justify-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                Error al cargar productos.
-              </div>
-            ) : (
-              <>
-              {/* Filtros: categoría + buscador */}
-              <div className="mb-4 flex flex-col sm:flex-row gap-3">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => { setSelectedCategory(e.target.value); setSearchProd(''); }}
-                  className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 bg-white cursor-pointer"
-                >
-                  {ADMIN_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Buscar producto por nombre..."
-                    value={searchProd}
-                    onChange={(e) => setSearchProd(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
-                  />
-                  {searchProd && (
-                    <button
-                      onClick={() => setSearchProd('')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {rows.length === 0 && searchProd.trim() ? (
-                <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-8 text-center text-text-dark/60 font-heading">
-                  No se encontraron productos con ese nombre
-                </div>
-              ) : (
-              <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-200">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-xs sm:text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">ID</th>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Nombre</th>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Categoría</th>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Precio</th>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Tipo</th>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Stock</th>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((p) => {
-                        const isDisponible = p.disponible !== false;
-                        const isToggling = togglingId === p.id;
-                        return (
-                          <tr
-                            key={p.id}
-                            className={`border-t border-gray-100 transition-opacity ${!isDisponible ? 'opacity-50 bg-gray-50' : ''}`}
-                          >
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80">{p.id}</td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-medium">
-                              {p.nombre}
-                              {!isDisponible && <span className="ml-2 text-xs text-red-500 font-bold">(Sin stock)</span>}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80 hidden sm:table-cell">{p.categoria || '-'}</td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-bold">{p.precio != null ? `$${p.precio}` : '-'}</td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 hidden sm:table-cell">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold ${p.es_unidad ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {p.es_unidad ? 'Unidad' : 'Peso'}
-                              </span>
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3">
-                              <button
-                                onClick={() => handleToggleDisponible(p)}
-                                disabled={isToggling}
-                                className={`flex items-center gap-1 px-2 py-1 rounded-lg transition text-xs font-bold ${
-                                  isDisponible
-                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
-                                } ${isToggling ? 'opacity-50 cursor-wait' : ''}`}
-                                title={isDisponible ? 'Click para deshabilitar' : 'Click para habilitar'}
-                              >
-                                {isToggling ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : isDisponible ? (
-                                  <ToggleRight className="w-5 h-5" />
-                                ) : (
-                                  <ToggleLeft className="w-5 h-5" />
-                                )}
-                                <span className="hidden sm:inline">{isDisponible ? 'On' : 'Off'}</span>
-                              </button>
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3">
-                              <button
-                                onClick={() => openEdit(p)}
-                                className="bg-primary text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-secondary transition text-xs sm:text-sm"
-                              >
-                                Editar
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              )}
-              </>
-            )}
-          </>
-        )}
-
-        {activeTab === 'Pedidos' && (
-          <>
-            {loadingPedidos ? (
-              <div className="text-center py-10 text-lg text-secondary font-heading flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Cargando pedidos...
-              </div>
-            ) : errorPedidos ? (
-              <div className="text-center py-10 text-lg text-red-600 font-heading flex items-center justify-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                Error al cargar pedidos.
-              </div>
-            ) : pedidos?.length === 0 ? (
-              <div className="text-center py-10 text-lg text-text-dark/60 font-heading">
-                No hay pedidos registrados aún.
-              </div>
-            ) : (
-              <div className="space-y-3 sm:space-y-4">
-                {pedidos?.map((pedido) => {
-                  const EstadoIcon = ESTADOS[pedido.estado]?.icon || Clock;
-                  const isExpanded = expandedPedido === pedido.id;
-
-                  return (
-                    <div
-                      key={pedido.id}
-                      className="bg-white shadow-lg rounded-xl sm:rounded-2xl border border-gray-200 overflow-hidden"
-                    >
-                      {/* Header del pedido - siempre visible */}
-                      <div
-                        className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50 transition"
-                        onClick={() => setExpandedPedido(isExpanded ? null : pedido.id)}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="text-xs sm:text-sm text-text-dark/60">
-                              #{pedido.id}
-                            </div>
-                            <div className={`flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full text-xs font-bold border ${ESTADOS[pedido.estado]?.color || 'bg-gray-100 text-gray-800'}`}>
-                              <EstadoIcon className={`w-3 h-3 ${pedido.estado === 'preparando' ? 'animate-spin' : ''}`} />
-                              {ESTADOS[pedido.estado]?.label || pedido.estado}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-4">
-                            <div className="text-xs sm:text-sm text-text-dark/70">
-                              {formatDate(pedido.created_at)}
-                            </div>
-                            <div className="font-bold text-primary text-sm sm:text-base">
-                              ${pedido.total_estimado?.toLocaleString('es-AR') || '0'}
-                            </div>
-                            {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Detalle expandido */}
-                      {isExpanded && (
-                        <div className="border-t border-gray-100 p-3 sm:p-4 bg-gray-50/50">
-                          {/* Selector de estado */}
-                          <div className="mb-4">
-                            <label className="block text-xs sm:text-sm font-bold text-text-dark mb-2">
-                              Cambiar estado:
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                              {Object.entries(ESTADOS).map(([key, { label, color }]) => (
-                                <button
-                                  key={key}
-                                  onClick={() => updatePedidoMutation.mutate({ id: pedido.id, estado: key })}
-                                  disabled={pedido.estado === key || updatePedidoMutation.isPending}
-                                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold border transition disabled:opacity-50 ${
-                                    pedido.estado === key ? color : 'bg-white border-gray-200 hover:border-primary'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Items del pedido */}
-                          <div className="mb-4">
-                            <h4 className="text-xs sm:text-sm font-bold text-text-dark mb-2">Productos:</h4>
-                            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                              {Array.isArray(pedido.items) && pedido.items.map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className="flex justify-between items-center p-2 sm:p-3 border-b last:border-b-0 text-xs sm:text-sm"
-                                >
-                                  <div>
-                                    <span className="font-medium">{item.nombre}</span>
-                                    <span className="text-text-dark/60 ml-2">
-                                      x{item.cantidad} {item.tipo_unidad}
-                                    </span>
-                                  </div>
-                                  <div className="font-bold">
-                                    ${item.subtotal_item?.toLocaleString('es-AR') || '0'}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Comentarios */}
-                          {pedido.comentarios && (
-                            <div className="mb-4">
-                              <h4 className="text-xs sm:text-sm font-bold text-text-dark mb-2">Comentarios:</h4>
-                              <div className="bg-white rounded-lg border border-gray-200 p-2 sm:p-3 text-xs sm:text-sm text-text-dark/80">
-                                {pedido.comentarios}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-
-        {activeTab === 'Crear Producto' && (
-          <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-4 sm:p-6 max-w-lg mx-auto">
-            <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark mb-4 sm:mb-6">
-              Agregar Nuevo Producto
-            </h2>
-
-            <form onSubmit={submitNewProduct} className="space-y-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-                  Nombre *
-                </label>
-                <input
-                  type="text"
-                  value={newProduct.nombre}
-                  onChange={(e) => setNewProduct({ ...newProduct, nombre: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                  placeholder="Ej: Chorizo Criollo"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-                    Precio ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={newProduct.precio}
-                    onChange={(e) => setNewProduct({ ...newProduct, precio: e.target.value })}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                    placeholder="Ej: 2500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-                    Peso prom. (kg)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={newProduct.peso_promedio_unidad}
-                    onChange={(e) => setNewProduct({ ...newProduct, peso_promedio_unidad: e.target.value })}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                    placeholder="Ej: 0.5"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-                  Categoría
-                </label>
-                <select
-                  value={newProduct.categoria}
-                  onChange={(e) => {
-                    const cat = e.target.value;
-                    const adicionales = ['Bebidas', 'Snacks', 'Almacén', 'Salsas'];
-                    const esAdicional = adicionales.includes(cat);
-                    setNewProduct({ ...newProduct, categoria: cat, es_unidad: esAdicional ? true : newProduct.es_unidad });
-                  }}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                >
-                  <option value="">Seleccionar...</option>
-                  <optgroup label="Carnicería">
-                    <option value="Carnes">Carnes (Vacunos)</option>
-                    <option value="Cerdo">Cerdo</option>
-                    <option value="Pollos">Pollos</option>
-                    <option value="Achuras">Achuras</option>
-                  </optgroup>
-                  <optgroup label="Almacén y Adicionales">
-                    <option value="Bebidas">Bebidas</option>
-                    <option value="Snacks">Snacks</option>
-                    <option value="Almacén">Almacén</option>
-                    <option value="Salsas">Salsas</option>
-                  </optgroup>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between py-2">
-                <label className="text-xs sm:text-sm font-bold text-text-dark">
-                  ¿Venta por unidad?
-                </label>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={newProduct.es_unidad}
-                  onClick={() => setNewProduct({ ...newProduct, es_unidad: !newProduct.es_unidad })}
-                  className={`relative inline-flex h-6 sm:h-7 w-11 sm:w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${newProduct.es_unidad ? 'bg-primary' : 'bg-gray-300'}`}
-                >
-                  <span
-                    className={`inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow transition-transform ${newProduct.es_unidad ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1'}`}
-                  />
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-                  URL de imagen
-                </label>
-                <input
-                  type="url"
-                  value={newProduct.imagen_url}
-                  onChange={(e) => setNewProduct({ ...newProduct, imagen_url: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-                  Descripción
-                </label>
-                <textarea
-                  value={newProduct.descripcion}
-                  onChange={(e) => setNewProduct({ ...newProduct, descripcion: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm resize-none"
-                  rows="3"
-                  placeholder="Descripción del producto..."
-                />
-              </div>
-
-              {createProductMutation.isError && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  Error al crear producto. Intenta nuevamente.
-                </div>
-              )}
-
-              {createProductMutation.isSuccess && (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  Producto creado exitosamente.
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={createProductMutation.isPending}
-                className="w-full bg-primary text-white py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base hover:bg-secondary transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {createProductMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Crear Producto
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'Cierre de Caja' && (
-          <div className="space-y-6">
-            {/* Formulario de cierre */}
-            <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-4 sm:p-6 max-w-lg mx-auto">
-              <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">
-                    Cierre de Caja
-                  </h2>
-                  <p className="text-xs sm:text-sm text-text-dark/60">
-                    {editingCierreId ? 'Editando cierre existente' : cierreHoy ? 'Editando cierre de hoy' : 'Nuevo cierre del día'}
-                  </p>
-                </div>
-                {editingCierreId && (
-                  <button
-                    onClick={cancelEditCierre}
-                    className="text-gray-400 hover:text-gray-600 transition"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-
-              <form onSubmit={submitCierre} className="space-y-5">
-                {/* Sección: Ventas Totales */}
-                <div className="bg-blue-50 rounded-xl p-3 sm:p-4">
-                  <h4 className="text-xs sm:text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    VENTAS TOTALES
-                  </h4>
-                  <div>
-                    <label className="block text-xs font-bold text-text-dark mb-1">
-                      Total Balanza (ticket)
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={cierreForm.venta_total_balanza}
-                      onChange={(e) => setCierreForm({ ...cierreForm, venta_total_balanza: e.target.value })}
-                      className="w-full px-4 py-3 text-lg sm:text-xl font-bold text-gray-900 text-center rounded-lg border-2 border-blue-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition placeholder:text-gray-400"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                {/* Sección: Pagos Digitales */}
-                <div className="bg-purple-50 rounded-xl p-3 sm:p-4">
-                  <h4 className="text-xs sm:text-sm font-bold text-purple-800 mb-3 flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" />
-                    PAGOS DIGITALES
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-text-dark mb-1">
-                        Posnet
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={cierreForm.venta_posnet}
-                        onChange={(e) => setCierreForm({ ...cierreForm, venta_posnet: e.target.value })}
-                        className="w-full px-3 py-2.5 text-base sm:text-lg font-bold text-gray-900 text-center rounded-lg border-2 border-purple-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition placeholder:text-gray-400"
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-dark mb-1">
-                        Transferencias
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={cierreForm.venta_transferencias}
-                        onChange={(e) => setCierreForm({ ...cierreForm, venta_transferencias: e.target.value })}
-                        className="w-full px-3 py-2.5 text-base sm:text-lg font-bold text-gray-900 text-center rounded-lg border-2 border-purple-200 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition placeholder:text-gray-400"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sección: Control de Efectivo */}
-                <div className="bg-green-50 rounded-xl p-3 sm:p-4">
-                  <h4 className="text-xs sm:text-sm font-bold text-green-800 mb-3 flex items-center gap-2">
-                    <Calculator className="w-4 h-4" />
-                    CONTROL DE EFECTIVO
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-text-dark mb-1">
-                        Fondo Inicial (al abrir)
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={cierreForm.fondo_inicial}
-                        onChange={(e) => setCierreForm({ ...cierreForm, fondo_inicial: e.target.value })}
-                        className="w-full px-3 py-2.5 text-base sm:text-lg font-bold text-gray-900 text-center rounded-lg border-2 border-green-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition placeholder:text-gray-400"
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-dark mb-1">
-                        Efectivo Final (al cerrar)
-                      </label>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={cierreForm.efectivo_final}
-                        onChange={(e) => setCierreForm({ ...cierreForm, efectivo_final: e.target.value })}
-                        className="w-full px-3 py-2.5 text-base sm:text-lg font-bold text-gray-900 text-center rounded-lg border-2 border-green-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition placeholder:text-gray-400"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sección: Gastos */}
-                <div className="bg-red-50 rounded-xl p-3 sm:p-4">
-                  <h4 className="text-xs sm:text-sm font-bold text-red-800 mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    GASTOS DEL DÍA
-                  </h4>
-                  <div>
-                    <label className="block text-xs font-bold text-text-dark mb-1">
-                      Total Gastos
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={cierreForm.gastos_del_dia}
-                      onChange={(e) => setCierreForm({ ...cierreForm, gastos_del_dia: e.target.value })}
-                      className="w-full px-4 py-3 text-lg sm:text-xl font-bold text-gray-900 text-center rounded-lg border-2 border-red-200 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition placeholder:text-gray-400"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                {/* Resumen de Cálculos */}
-                <div className="bg-gray-100 rounded-xl p-4 space-y-3">
-                  <h4 className="text-xs sm:text-sm font-bold text-text-dark/70 mb-2">
-                    RESUMEN AUTOMÁTICO
-                  </h4>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-text-dark/70">Venta estimada en efectivo:</span>
-                    <span className="text-lg font-bold text-blue-700">
-                      ${calculosCierre.ventaEfectivoTeorica.toLocaleString('es-AR')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                    <span className="text-sm font-bold text-text-dark">Diferencia de caja:</span>
-                    <span className={`text-xl sm:text-2xl font-extrabold ${calculosCierre.esPositivo ? 'text-green-600' : 'text-red-600'}`}>
-                      {calculosCierre.diferenciaCaja >= 0 ? '+' : ''}{calculosCierre.diferenciaCaja.toLocaleString('es-AR')}
-                    </span>
-                  </div>
-                  <p className="text-xs text-text-dark/50 mt-2">
-                    {calculosCierre.esPositivo 
-                      ? 'Cuadra correctamente' 
-                      : 'Falta dinero en caja - revisar tickets'}
-                  </p>
-                </div>
-
-                {/* Notas opcionales */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-bold text-text-dark mb-2">
-                    Notas (opcional)
-                  </label>
-                  <textarea
-                    value={cierreForm.notas}
-                    onChange={(e) => setCierreForm({ ...cierreForm, notas: e.target.value })}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm resize-none"
-                    rows="2"
-                    placeholder="Observaciones del día..."
-                  />
-                </div>
-
-                {saveCierreMutation.isError && (
-                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    Error al guardar. Intenta nuevamente.
-                  </div>
-                )}
-
-                {saveCierreMutation.isSuccess && (
-                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
-                    <CheckCircle className="w-4 h-4" />
-                    {editingCierreId ? 'Cierre actualizado correctamente.' : 'Cierre guardado correctamente.'}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={saveCierreMutation.isPending}
-                  className="w-full bg-primary text-white py-4 sm:py-5 rounded-xl font-bold text-base sm:text-lg hover:bg-secondary transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {saveCierreMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      {editingCierreId ? 'Actualizar Cierre' : 'Guardar Cierre'}
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Historial de cierres */}
-            <div className="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-100">
-                <h3 className="text-base sm:text-lg font-heading font-extrabold text-text-dark flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  Últimos 7 Cierres
-                </h3>
-              </div>
-
-              {loadingCierres ? (
-                <div className="p-6 text-center text-text-dark/60 flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Cargando historial...
-                </div>
-              ) : errorCierres ? (
-                <div className="p-6 text-center text-red-600">Error al cargar historial.</div>
-              ) : cierres?.length === 0 ? (
-                <div className="p-6 text-center text-text-dark/60">No hay cierres registrados.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-xs sm:text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Fecha</th>
-                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Balanza</th>
-                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Digital</th>
-                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Diferencia</th>
-                        <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cierres?.map((c) => {
-                        const diferencia = c.diferencia_caja || 0;
-                        const esHoy = c.fecha === hoy;
-                        return (
-                          <tr
-                            key={c.id}
-                            className={`border-t border-gray-100 ${esHoy ? 'bg-primary/5' : ''}`}
-                          >
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">
-                              {(() => {
-                                const fecha = c.fecha instanceof Date ? c.fecha : new Date(c.fecha);
-                                return fecha.toLocaleDateString('es-AR', {
-                                  weekday: 'short',
-                                  day: '2-digit',
-                                  month: 'short',
-                                });
-                              })()}
-                              {esHoy && (
-                                <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
-                                  Hoy
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold text-blue-700">
-                              ${c.venta_total_balanza?.toLocaleString('es-AR') || 0}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3 text-right">
-                              <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <span className="text-[10px] sm:text-xs text-gray-500">P</span>
-                                  <span className="font-bold text-purple-700 text-xs sm:text-sm">
-                                    ${(c.venta_posnet || 0).toLocaleString('es-AR')}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <span className="text-[10px] sm:text-xs text-gray-500">T</span>
-                                  <span className="font-bold text-indigo-600 text-xs sm:text-sm">
-                                    ${(c.venta_transferencias || 0).toLocaleString('es-AR')}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className={`px-3 sm:px-4 py-2 sm:py-3 text-right font-extrabold ${diferencia >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {diferencia >= 0 ? '+' : ''}{diferencia.toLocaleString('es-AR')}
-                            </td>
-                            <td className="px-3 sm:px-4 py-2 sm:py-3">
-                              <button
-                                onClick={() => handleEditCierre(c)}
-                                className="bg-primary/10 text-primary px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-primary/20 transition text-xs sm:text-sm flex items-center gap-1"
-                              >
-                                <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">Editar</span>
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {renderTab()}
       </div>
 
-      {/* Modal de edición */}
-      {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-            <div className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">Editar precio</h2>
-                <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-sm text-text-dark/70 mb-4">{editing.nombre}</p>
-
-              <form onSubmit={submitEdit} className="space-y-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">Nuevo precio</label>
-                  <input
-                    type="number"
-                    value={precio}
-                    onChange={(e) => setPrecio(e.target.value)}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                    placeholder="Ej: 19900"
-                  />
-                </div>
-
-                {updateMutation.isError && (
-                  <div className="text-xs sm:text-sm text-red-600 font-bold">No se pudo actualizar. Intenta nuevamente.</div>
-                )}
-
-                <div className="flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditing(null);
-                      setPrecio('');
-                    }}
-                    className="px-3 sm:px-4 py-2 rounded-xl border-2 border-gray-200 font-bold hover:border-primary transition text-sm"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={updateMutation.isPending}
-                    className="bg-primary text-white px-3 sm:px-4 py-2 rounded-xl font-bold hover:bg-secondary transition disabled:opacity-60 text-sm"
-                  >
-                    {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
-                  </button>
-                </div>
-              </form>
-            </div>
+      {/* ── Toasts ── */}
+      <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border text-sm font-bold animate-[slideIn_0.2s_ease-out] ${
+              t.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-green-50 border-green-200 text-green-700'
+            }`}
+          >
+            {t.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            ) : (
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            )}
+            {t.message}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 };
