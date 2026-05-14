@@ -5,12 +5,12 @@ import {
   Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, Loader2, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-import ProductsManager from '../components/Admin/ProductsManager';
-import OrdersManager from '../components/Admin/OrdersManager';
-import CreateProduct from '../components/Admin/CreateProduct';
-import CashClosing from '../components/Admin/CashClosing';
-import InventoryManager from '../components/Admin/InventoryManager';
-import RemitosHistory from '../components/Admin/RemitosHistory';
+import ProductsManager from '../Components/Admin/ProductsManager';
+import OrdersManager from '../Components/Admin/OrdersManager';
+import CreateProduct from '../Components/Admin/CreateProduct';
+import CashClosing from '../Components/Admin/CashClosing';
+import InventoryManager from '../Components/Admin/InventoryManager';
+import RemitosHistory from '../Components/Admin/RemitosHistory';
 
 const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos'];
 
