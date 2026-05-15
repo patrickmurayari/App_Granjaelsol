@@ -15,6 +15,9 @@ const RemitosHistory = ({ addToast }) => {
   const [editForm, setEditForm] = useState({ product_name: '', weights: '', unit_price: '' });
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [supplierTab, setSupplierTab] = useState('remitos');
+  const [editingPaymentId, setEditingPaymentId] = useState(null);
+  const [editPaymentForm, setEditPaymentForm] = useState({ payment_date: '', method: '', amount_haber: '' });
+  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
 
   const {
     data: suppliers,
@@ -142,6 +145,75 @@ const RemitosHistory = ({ addToast }) => {
   const handleConfirmDelete = () => {
     if (deletingItemId) {
       deleteItemMutation.mutate(deletingItemId);
+    }
+  };
+
+  const updatePaymentMutation = useMutation({
+    mutationFn: async ({ paymentId, payload }) => {
+      const { data } = await api.put(`/inventory/payments/${paymentId}`, payload);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['supplier-payments', remitosSupplier] });
+      await queryClient.invalidateQueries({ queryKey: ['supplier-balance', remitosSupplier] });
+      setEditingPaymentId(null);
+      addToast('Pago actualizado correctamente');
+    },
+    onError: () => {
+      addToast('Error al actualizar pago. Verificá los datos.', 'error');
+    },
+  });
+
+  const deletePaymentMutation = useMutation({
+    mutationFn: async (paymentId) => {
+      const { data } = await api.delete(`/inventory/payments/${paymentId}`);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['supplier-payments', remitosSupplier] });
+      await queryClient.invalidateQueries({ queryKey: ['supplier-balance', remitosSupplier] });
+      setDeletingPaymentId(null);
+      addToast('Pago eliminado correctamente');
+    },
+    onError: () => {
+      addToast('Error al eliminar pago. Intenta nuevamente.', 'error');
+    },
+  });
+
+  const handleStartEditPayment = (pay) => {
+    setEditPaymentForm({
+      payment_date: pay.payment_date ? pay.payment_date.split('T')[0] : '',
+      method: pay.method || '',
+      amount_haber: pay.amount_haber?.toString() || '',
+    });
+    setEditingPaymentId(pay.id);
+  };
+
+  const handleCancelEditPayment = () => {
+    setEditingPaymentId(null);
+    setEditPaymentForm({ payment_date: '', method: '', amount_haber: '' });
+  };
+
+  const handleSubmitEditPayment = (e) => {
+    e.preventDefault();
+    const amount = Number(editPaymentForm.amount_haber);
+    if (amount <= 0 || isNaN(amount)) return;
+    if (!editPaymentForm.payment_date) return;
+    const validMethods = ['efectivo', 'transferencia'];
+    if (!validMethods.includes(editPaymentForm.method.toLowerCase().trim())) return;
+    updatePaymentMutation.mutate({
+      paymentId: editingPaymentId,
+      payload: {
+        payment_date: editPaymentForm.payment_date,
+        method: editPaymentForm.method.toLowerCase().trim(),
+        amount_haber: amount,
+      },
+    });
+  };
+
+  const handleConfirmDeletePayment = () => {
+    if (deletingPaymentId) {
+      deletePaymentMutation.mutate(deletingPaymentId);
     }
   };
 
@@ -366,44 +438,243 @@ const RemitosHistory = ({ addToast }) => {
                               <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Fecha de Pago</th>
                               <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Método</th>
                               <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Monto (Haber)</th>
+                              <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Acción</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {(supplierPayments || []).map((pay) => (
-                              <tr key={pay.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                                <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
-                                  {new Date(pay.payment_date).toLocaleDateString('es-AR')}
-                                </td>
-                                <td className="py-3 px-4" style={{ color: '#6b7280' }}>
-                                  {fmtMethod(pay.method)}
-                                </td>
-                                <td className="py-3 px-4 text-right font-extrabold" style={{ color: '#16a34a' }}>
-                                  ${fmtMoney(pay.amount_haber)}
-                                </td>
-                              </tr>
-                            ))}
+                            {(supplierPayments || []).map((pay) => {
+                              const isEditing = editingPaymentId === pay.id;
+                              if (isEditing) {
+                                return (
+                                  <tr key={pay.id}>
+                                    <td colSpan={4} className="py-3 px-4">
+                                      <form onSubmit={handleSubmitEditPayment} className="bg-blue-50 rounded-xl p-3 border-2 border-blue-200 space-y-3">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="font-extrabold text-sm" style={{ color: '#111827' }}>Editando pago</span>
+                                          <button type="button" onClick={handleCancelEditPayment} className="text-gray-400 hover:text-gray-600">
+                                            <X className="w-4 h-4" />
+                                          </button>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                          <div>
+                                            <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Fecha *</label>
+                                            <input
+                                              type="date"
+                                              value={editPaymentForm.payment_date}
+                                              onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, payment_date: e.target.value }))}
+                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                              style={{ color: '#111827' }}
+                                              required
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Método *</label>
+                                            <select
+                                              value={editPaymentForm.method}
+                                              onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, method: e.target.value }))}
+                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                              style={{ color: '#111827' }}
+                                              required
+                                            >
+                                              <option value="efectivo">Efectivo</option>
+                                              <option value="transferencia">Transferencia</option>
+                                            </select>
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Monto ($) *</label>
+                                            <input
+                                              type="number"
+                                              inputMode="decimal"
+                                              value={editPaymentForm.amount_haber}
+                                              onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, amount_haber: e.target.value }))}
+                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                              style={{ color: '#111827' }}
+                                              required
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="flex gap-2 justify-end pt-1">
+                                          <button
+                                            type="button"
+                                            onClick={handleCancelEditPayment}
+                                            className="px-3 py-1.5 rounded-lg border-2 border-gray-200 font-bold text-xs hover:border-primary transition"
+                                            style={{ color: '#111827' }}
+                                          >
+                                            Cancelar
+                                          </button>
+                                          <button
+                                            type="submit"
+                                            disabled={updatePaymentMutation.isPending}
+                                            className="px-4 py-1.5 rounded-lg font-bold text-xs bg-primary text-white hover:bg-secondary transition disabled:opacity-60 flex items-center gap-1.5"
+                                          >
+                                            {updatePaymentMutation.isPending ? (
+                                              <>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                Guardando...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <CheckCircle className="w-3.5 h-3.5" />
+                                                Guardar
+                                              </>
+                                            )}
+                                          </button>
+                                        </div>
+                                      </form>
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                              return (
+                                <tr key={pay.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                                  <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
+                                    {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                                  </td>
+                                  <td className="py-3 px-4" style={{ color: '#6b7280' }}>
+                                    {fmtMethod(pay.method)}
+                                  </td>
+                                  <td className="py-3 px-4 text-right font-extrabold" style={{ color: '#16a34a' }}>
+                                    ${fmtMoney(pay.amount_haber)}
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <button
+                                        onClick={() => handleStartEditPayment(pay)}
+                                        className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                                        title="Editar"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => setDeletingPaymentId(pay.id)}
+                                        className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
+                                        title="Eliminar"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
 
                       <div className="sm:hidden space-y-3">
-                        {(supplierPayments || []).map((pay) => (
-                          <div key={pay.id} className="p-4 rounded-xl border-2 border-gray-200 bg-white">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="font-bold text-sm" style={{ color: '#111827' }}>
-                                  {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                        {(supplierPayments || []).map((pay) => {
+                          const isEditing = editingPaymentId === pay.id;
+                          if (isEditing) {
+                            return (
+                              <form key={pay.id} onSubmit={handleSubmitEditPayment} className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200 space-y-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-extrabold text-sm" style={{ color: '#111827' }}>Editando pago</span>
+                                  <button type="button" onClick={handleCancelEditPayment} className="text-gray-400 hover:text-gray-600">
+                                    <X className="w-4 h-4" />
+                                  </button>
                                 </div>
-                                <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
-                                  {fmtMethod(pay.method)}
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Fecha *</label>
+                                    <input
+                                      type="date"
+                                      value={editPaymentForm.payment_date}
+                                      onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, payment_date: e.target.value }))}
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                      style={{ color: '#111827' }}
+                                      required
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Método *</label>
+                                    <select
+                                      value={editPaymentForm.method}
+                                      onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, method: e.target.value }))}
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                      style={{ color: '#111827' }}
+                                      required
+                                    >
+                                      <option value="efectivo">Efectivo</option>
+                                      <option value="transferencia">Transferencia</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Monto ($) *</label>
+                                    <input
+                                      type="number"
+                                      inputMode="decimal"
+                                      value={editPaymentForm.amount_haber}
+                                      onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, amount_haber: e.target.value }))}
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                      style={{ color: '#111827' }}
+                                      required
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="font-extrabold text-base" style={{ color: '#16a34a' }}>
-                                ${fmtMoney(pay.amount_haber)}
+                                <div className="flex gap-2 justify-end pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelEditPayment}
+                                    className="px-3 py-1.5 rounded-lg border-2 border-gray-200 font-bold text-xs hover:border-primary transition"
+                                    style={{ color: '#111827' }}
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    disabled={updatePaymentMutation.isPending}
+                                    className="px-4 py-1.5 rounded-lg font-bold text-xs bg-primary text-white hover:bg-secondary transition disabled:opacity-60 flex items-center gap-1.5"
+                                  >
+                                    {updatePaymentMutation.isPending ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        Guardando...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <CheckCircle className="w-3.5 h-3.5" />
+                                        Guardar
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </form>
+                            );
+                          }
+                          return (
+                            <div key={pay.id} className="p-4 rounded-xl border-2 border-gray-200 bg-white">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="font-bold text-sm" style={{ color: '#111827' }}>
+                                    {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                                  </div>
+                                  <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                                    {fmtMethod(pay.method)}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-base" style={{ color: '#16a34a' }}>
+                                    ${fmtMoney(pay.amount_haber)}
+                                  </span>
+                                  <button
+                                    onClick={() => handleStartEditPayment(pay)}
+                                    className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                                    title="Editar"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeletingPaymentId(pay.id)}
+                                    className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </>
                   )}
@@ -609,6 +880,50 @@ const RemitosHistory = ({ addToast }) => {
                 className="px-4 py-2 rounded-xl font-bold text-sm bg-red-700 text-white hover:bg-red-800 transition disabled:opacity-60 flex items-center gap-2"
               >
                 {deleteItemMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingPaymentId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-[60]" onClick={() => setDeletingPaymentId(null)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-200 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-700" />
+              </div>
+              <h3 className="text-base sm:text-lg font-heading font-extrabold" style={{ color: '#111827' }}>
+                ¿Eliminar pago?
+              </h3>
+            </div>
+            <p className="text-sm text-text-dark/70 mb-5">
+              Esta acción no se puede deshacer. El pago será eliminado y el saldo pendiente se actualizará automáticamente.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeletingPaymentId(null)}
+                className="px-4 py-2 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition"
+                style={{ color: '#111827' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDeletePayment}
+                disabled={deletePaymentMutation.isPending}
+                className="px-4 py-2 rounded-xl font-bold text-sm bg-red-700 text-white hover:bg-red-800 transition disabled:opacity-60 flex items-center gap-2"
+              >
+                {deletePaymentMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Eliminando...
