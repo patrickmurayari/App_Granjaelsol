@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import PropTypes from 'prop-types';
 import api from '../../api/api';
 import {
-  FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle
+  FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet
 } from 'lucide-react';
 
 const RemitosHistory = ({ addToast }) => {
@@ -14,8 +14,8 @@ const RemitosHistory = ({ addToast }) => {
   const [editingItemId, setEditingItemId] = useState(null);
   const [editForm, setEditForm] = useState({ product_name: '', weights: '', unit_price: '' });
   const [deletingItemId, setDeletingItemId] = useState(null);
+  const [supplierTab, setSupplierTab] = useState('remitos');
 
-  // Query de proveedores (reutilizada)
   const {
     data: suppliers,
     isLoading: loadingSuppliers,
@@ -28,7 +28,6 @@ const RemitosHistory = ({ addToast }) => {
     },
   });
 
-  // Query de remitos por proveedor
   const {
     data: supplierEntries,
     isLoading: loadingEntries,
@@ -42,7 +41,6 @@ const RemitosHistory = ({ addToast }) => {
     enabled: !!remitosSupplier,
   });
 
-  // Query de detalle de un remito
   const {
     data: entryDetail,
     isLoading: loadingDetail,
@@ -55,6 +53,19 @@ const RemitosHistory = ({ addToast }) => {
     enabled: !!selectedEntry,
   });
 
+  const {
+    data: supplierPayments,
+    isLoading: loadingPayments,
+    isError: errorPayments,
+  } = useQuery({
+    queryKey: ['supplier-payments', remitosSupplier],
+    queryFn: async () => {
+      const { data } = await api.get(`/inventory/payments/supplier/${remitosSupplier}`);
+      return data;
+    },
+    enabled: !!remitosSupplier && supplierTab === 'pagos',
+  });
+
   const filteredEntries = useMemo(() => {
     const all = supplierEntries || [];
     if (!searchTerm.trim()) return all;
@@ -64,7 +75,6 @@ const RemitosHistory = ({ addToast }) => {
     );
   }, [supplierEntries, searchTerm]);
 
-  // Mutación para actualizar item
   const updateItemMutation = useMutation({
     mutationFn: async ({ itemId, payload }) => {
       const { data } = await api.put(`/inventory/items/${itemId}`, payload);
@@ -81,7 +91,6 @@ const RemitosHistory = ({ addToast }) => {
     },
   });
 
-  // Mutación para eliminar item
   const deleteItemMutation = useMutation({
     mutationFn: async (itemId) => {
       const { data } = await api.delete(`/inventory/items/${itemId}`);
@@ -136,22 +145,24 @@ const RemitosHistory = ({ addToast }) => {
     }
   };
 
+  const fmtMoney = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+  const fmtMethod = (m) => (m ? m.charAt(0).toUpperCase() + m.slice(1) : '—');
+
   return (
     <>
       <div className="space-y-6">
-        {/* ── Selector de Proveedor ── */}
         <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center">
               <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-700" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">Historial de Remitos</h2>
-              <p className="text-xs sm:text-sm text-text-dark/60">Seleccioná un proveedor para ver sus remitos cargados</p>
+              <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">Cuenta Corriente</h2>
+              <p className="text-xs sm:text-sm text-text-dark/60">Seleccioná un proveedor para ver su cuenta corriente</p>
             </div>
             {remitosSupplier && (
               <button
-                onClick={() => { setRemitosSupplier(null); setSelectedEntry(null); setSearchTerm(''); }}
+                onClick={() => { setRemitosSupplier(null); setSelectedEntry(null); setSearchTerm(''); setSupplierTab('remitos'); }}
                 className="px-3 py-2 rounded-xl border-2 border-gray-200 font-bold text-xs sm:text-sm hover:border-primary transition"
                 style={{ color: '#111827' }}
               >
@@ -187,119 +198,214 @@ const RemitosHistory = ({ addToast }) => {
             )
           ) : (
             <>
-              {/* ── Listado de Remitos ── */}
-              {loadingEntries ? (
-                <div className="text-center py-6 flex items-center justify-center gap-2 text-text-dark/60">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Cargando remitos...
-                </div>
-              ) : errorEntries ? (
-                <div className="text-center py-6 text-red-600 flex items-center justify-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  Error al cargar remitos.
-                </div>
-              ) : (supplierEntries || []).length === 0 ? (
-                <div className="text-center py-8 text-text-dark/50">
-                  <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  No hay remitos registrados para este proveedor.
-                </div>
-              ) : (
-                <>
-                  {/* Buscador */}
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por número de remito..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setSupplierTab('remitos')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                    supplierTab === 'remitos'
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'bg-white text-gray-900 border border-gray-200 hover:border-primary'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Remitos
+                </button>
+                <button
+                  onClick={() => setSupplierTab('pagos')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                    supplierTab === 'pagos'
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'bg-white text-gray-900 border border-gray-200 hover:border-primary'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Historial de Pagos
+                </button>
+              </div>
 
-                  {filteredEntries.length === 0 ? (
+              {supplierTab === 'remitos' && (
+                <>
+                  {loadingEntries ? (
+                    <div className="text-center py-6 flex items-center justify-center gap-2 text-text-dark/60">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Cargando remitos...
+                    </div>
+                  ) : errorEntries ? (
+                    <div className="text-center py-6 text-red-600 flex items-center justify-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      Error al cargar remitos.
+                    </div>
+                  ) : (supplierEntries || []).length === 0 ? (
                     <div className="text-center py-8 text-text-dark/50">
-                      <Search className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                      No se encontraron remitos con ese número.
+                      <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      No hay remitos registrados para este proveedor.
                     </div>
                   ) : (
-                  <>
-                  {/* Desktop: tabla */}
-                  <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b-2 border-gray-200">
-                          <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Fecha</th>
-                          <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>N° Remito</th>
-                          <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Monto Total</th>
-                          <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Acción</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredEntries.map((entry) => (
-                          <tr
-                            key={entry.id}
-                            className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition"
-                            onClick={() => setSelectedEntry(entry.id)}
+                    <>
+                      <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <input
+                          type="text"
+                          placeholder="Buscar por número de remito..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
+                        />
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
                           >
-                            <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
-                              {new Date(entry.entry_date).toLocaleDateString('es-AR')}
-                            </td>
-                            <td className="py-3 px-4" style={{ color: '#6b7280' }}>
-                              {entry.invoice_number || '—'}
-                            </td>
-                            <td className="py-3 px-4 text-right font-extrabold" style={{ color: '#8B0000' }}>
-                              ${Number(entry.total_debe).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <span className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10" style={{ color: '#8B0000' }}>
-                                Ver detalle
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
 
-                  {/* Mobile: cards apiladas */}
-                  <div className="sm:hidden space-y-3">
-                    {filteredEntries.map((entry) => (
-                      <button
-                        key={entry.id}
-                        onClick={() => setSelectedEntry(entry.id)}
-                        className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 bg-white text-left transition-all"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-bold text-sm" style={{ color: '#111827' }}>
-                              {new Date(entry.entry_date).toLocaleDateString('es-AR')}
-                            </div>
-                            <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
-                              Remito: {entry.invoice_number || '—'}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-extrabold text-base" style={{ color: '#8B0000' }}>
-                              ${Number(entry.total_debe).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                            </div>
-                            <div className="text-[10px] font-bold mt-0.5" style={{ color: '#8B0000' }}>
-                              Ver detalle →
-                            </div>
-                          </div>
+                      {filteredEntries.length === 0 ? (
+                        <div className="text-center py-8 text-text-dark/50">
+                          <Search className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                          No se encontraron remitos con ese número.
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                  </>
+                      ) : (
+                        <>
+                          <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b-2 border-gray-200">
+                                  <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Fecha</th>
+                                  <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>N° Remito</th>
+                                  <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Monto Total</th>
+                                  <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Acción</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredEntries.map((entry) => (
+                                  <tr
+                                    key={entry.id}
+                                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition"
+                                    onClick={() => setSelectedEntry(entry.id)}
+                                  >
+                                    <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
+                                      {new Date(entry.entry_date).toLocaleDateString('es-AR')}
+                                    </td>
+                                    <td className="py-3 px-4" style={{ color: '#6b7280' }}>
+                                      {entry.invoice_number || '—'}
+                                    </td>
+                                    <td className="py-3 px-4 text-right font-extrabold" style={{ color: '#8B0000' }}>
+                                      ${fmtMoney(entry.total_debe)}
+                                    </td>
+                                    <td className="py-3 px-4 text-right">
+                                      <span className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10" style={{ color: '#8B0000' }}>
+                                        Ver detalle
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="sm:hidden space-y-3">
+                            {filteredEntries.map((entry) => (
+                              <button
+                                key={entry.id}
+                                onClick={() => setSelectedEntry(entry.id)}
+                                className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 bg-white text-left transition-all"
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="font-bold text-sm" style={{ color: '#111827' }}>
+                                      {new Date(entry.entry_date).toLocaleDateString('es-AR')}
+                                    </div>
+                                    <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                                      Remito: {entry.invoice_number || '—'}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-extrabold text-base" style={{ color: '#8B0000' }}>
+                                      ${fmtMoney(entry.total_debe)}
+                                    </div>
+                                    <div className="text-[10px] font-bold mt-0.5" style={{ color: '#8B0000' }}>
+                                      Ver detalle →
+                                    </div>
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {supplierTab === 'pagos' && (
+                <>
+                  {loadingPayments ? (
+                    <div className="text-center py-6 flex items-center justify-center gap-2 text-text-dark/60">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Cargando pagos...
+                    </div>
+                  ) : errorPayments ? (
+                    <div className="text-center py-6 text-red-600 flex items-center justify-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      Error al cargar pagos.
+                    </div>
+                  ) : (supplierPayments || []).length === 0 ? (
+                    <div className="text-center py-8 text-text-dark/50">
+                      <Wallet className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      No se registraron pagos para este proveedor todavía.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="hidden sm:block overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b-2 border-gray-200">
+                              <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Fecha de Pago</th>
+                              <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Método</th>
+                              <th className="text-right py-3 px-4 font-bold" style={{ color: '#111827' }}>Monto (Haber)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(supplierPayments || []).map((pay) => (
+                              <tr key={pay.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                                <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
+                                  {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                                </td>
+                                <td className="py-3 px-4" style={{ color: '#6b7280' }}>
+                                  {fmtMethod(pay.method)}
+                                </td>
+                                <td className="py-3 px-4 text-right font-extrabold" style={{ color: '#16a34a' }}>
+                                  ${fmtMoney(pay.amount_haber)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="sm:hidden space-y-3">
+                        {(supplierPayments || []).map((pay) => (
+                          <div key={pay.id} className="p-4 rounded-xl border-2 border-gray-200 bg-white">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-bold text-sm" style={{ color: '#111827' }}>
+                                  {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                                </div>
+                                <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                                  {fmtMethod(pay.method)}
+                                </div>
+                              </div>
+                              <div className="font-extrabold text-base" style={{ color: '#16a34a' }}>
+                                ${fmtMoney(pay.amount_haber)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </>
               )}
@@ -308,7 +414,6 @@ const RemitosHistory = ({ addToast }) => {
         </div>
       </div>
 
-      {/* ── Modal Detalle Remito ── */}
       {selectedEntry && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50" onClick={() => setSelectedEntry(null)}>
           <div className="w-full max-w-lg max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -335,7 +440,7 @@ const RemitosHistory = ({ addToast }) => {
                   <div className="mt-3 flex items-center gap-2 bg-red-50 rounded-xl px-3 py-2">
                     <DollarSign className="w-4 h-4 text-red-700" />
                     <span className="font-extrabold text-red-700">
-                      Total: ${Number(entryDetail.entry.total_debe).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      Total: ${fmtMoney(entryDetail.entry.total_debe)}
                     </span>
                   </div>
                 </div>
@@ -432,7 +537,7 @@ const RemitosHistory = ({ addToast }) => {
                           </span>
                           <div className="flex items-center gap-2">
                             <span className="font-extrabold text-sm" style={{ color: '#8B0000' }}>
-                              ${Number(item.total_item).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                              ${fmtMoney(item.total_item)}
                             </span>
                             <button
                               onClick={() => handleStartEdit(item)}
@@ -459,11 +564,11 @@ const RemitosHistory = ({ addToast }) => {
                             <span className="font-bold">Total kg:</span> {totalWeight.toFixed(2)}
                           </div>
                           <div>
-                            <span className="font-bold">Precio/kg:</span> ${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                            <span className="font-bold">Precio/kg:</span> ${fmtMoney(item.unit_price)}
                           </div>
                           <div>
                             <span className="font-bold">Subtotal:</span>{' '}
-                            <span style={{ color: '#8B0000' }}>${Number(item.total_item).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                            <span style={{ color: '#8B0000' }}>${fmtMoney(item.total_item)}</span>
                           </div>
                         </div>
                       </div>
@@ -476,7 +581,6 @@ const RemitosHistory = ({ addToast }) => {
         </div>
       )}
 
-      {/* ── Diálogo de Confirmación de Eliminación ── */}
       {deletingItemId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-[60]" onClick={() => setDeletingItemId(null)}>
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-200 p-5" onClick={(e) => e.stopPropagation()}>
