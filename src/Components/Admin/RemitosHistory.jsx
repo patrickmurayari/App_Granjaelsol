@@ -12,7 +12,7 @@ const RemitosHistory = ({ addToast }) => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingItemId, setEditingItemId] = useState(null);
-  const [editForm, setEditForm] = useState({ product_name: '', weights: '', unit_price: '' });
+  const [editForm, setEditForm] = useState({ product_name: '', weights: '', unit_price: '', unit_type: 'kg' });
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [supplierTab, setSupplierTab] = useState('remitos');
   const [editingPaymentId, setEditingPaymentId] = useState(null);
@@ -112,34 +112,52 @@ const RemitosHistory = ({ addToast }) => {
 
   const handleStartEdit = (item) => {
     const weights = Array.isArray(item.weights) ? item.weights : [];
+    const ut = item.unit_type || 'kg';
     setEditForm({
       product_name: item.product_name || '',
-      weights: weights.join(', '),
+      weights: ut === 'u' ? (weights[0]?.toString() || '') : weights.join(', '),
       unit_price: item.unit_price?.toString() || '',
+      unit_type: ut,
     });
     setEditingItemId(item.id);
   };
 
   const handleCancelEdit = () => {
     setEditingItemId(null);
-    setEditForm({ product_name: '', weights: '', unit_price: '' });
+    setEditForm({ product_name: '', weights: '', unit_price: '', unit_type: 'kg' });
   };
 
   const handleSubmitEdit = (e) => {
     e.preventDefault();
-    const weights = editForm.weights
-      .split(/[,;\s-]+/)
-      .map(Number)
-      .filter((n) => !isNaN(n) && n > 0);
-    if (!editForm.product_name.trim() || weights.length === 0 || !editForm.unit_price) return;
-    updateItemMutation.mutate({
-      itemId: editingItemId,
-      payload: {
-        product_name: editForm.product_name.trim(),
-        weights,
-        unit_price: Number(editForm.unit_price),
-      },
-    });
+    const ut = editForm.unit_type || 'kg';
+    if (ut === 'u') {
+      const qty = Number(editForm.weights);
+      if (!editForm.product_name.trim() || qty <= 0 || !editForm.unit_price) return;
+      updateItemMutation.mutate({
+        itemId: editingItemId,
+        payload: {
+          product_name: editForm.product_name.trim(),
+          unit_type: 'u',
+          quantity: qty,
+          unit_price: Number(editForm.unit_price),
+        },
+      });
+    } else {
+      const weights = editForm.weights
+        .split(/[,;\s-]+/)
+        .map(Number)
+        .filter((n) => !isNaN(n) && n > 0);
+      if (!editForm.product_name.trim() || weights.length === 0 || !editForm.unit_price) return;
+      updateItemMutation.mutate({
+        itemId: editingItemId,
+        payload: {
+          product_name: editForm.product_name.trim(),
+          unit_type: 'kg',
+          weights,
+          unit_price: Number(editForm.unit_price),
+        },
+      });
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -719,6 +737,7 @@ const RemitosHistory = ({ addToast }) => {
                   {entryDetail.items.map((item, idx) => {
                     const isEditing = editingItemId === item.id;
                     const weights = Array.isArray(item.weights) ? item.weights : [];
+                    const ut = item.unit_type || 'kg';
                     const totalWeight = weights.reduce((s, w) => s + Number(w), 0);
 
                     if (isEditing) {
@@ -745,19 +764,63 @@ const RemitosHistory = ({ addToast }) => {
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Pesos (kg) *</label>
-                              <input
-                                type="text"
-                                value={editForm.weights}
-                                onChange={(e) => setEditForm((prev) => ({ ...prev, weights: e.target.value }))}
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                                style={{ color: '#111827' }}
-                                placeholder="94, 95, 99"
-                                required
-                              />
+                              <div className="flex items-center gap-2 mb-1">
+                                <label className="block text-xs font-bold" style={{ color: '#111827' }}>
+                                  {editForm.unit_type === 'u' ? 'Cantidad (u)' : 'Pesos (kg)'} *
+                                </label>
+                                <div className="flex rounded-lg border-2 border-gray-200 overflow-hidden">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditForm((prev) => ({ ...prev, unit_type: 'kg' }))}
+                                    className={`px-2 py-0.5 text-[10px] font-bold transition ${
+                                      editForm.unit_type !== 'u'
+                                        ? 'bg-primary text-white'
+                                        : 'bg-white text-gray-500 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    Kg
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditForm((prev) => ({ ...prev, unit_type: 'u' }))}
+                                    className={`px-2 py-0.5 text-[10px] font-bold transition ${
+                                      editForm.unit_type === 'u'
+                                        ? 'bg-primary text-white'
+                                        : 'bg-white text-gray-500 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    U
+                                  </button>
+                                </div>
+                              </div>
+                              {editForm.unit_type === 'u' ? (
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  inputMode="decimal"
+                                  value={editForm.weights}
+                                  onChange={(e) => setEditForm((prev) => ({ ...prev, weights: e.target.value }))}
+                                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                  style={{ color: '#111827' }}
+                                  placeholder="3"
+                                  required
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={editForm.weights}
+                                  onChange={(e) => setEditForm((prev) => ({ ...prev, weights: e.target.value }))}
+                                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                  style={{ color: '#111827' }}
+                                  placeholder="94, 95, 99"
+                                  required
+                                />
+                              )}
                             </div>
                             <div>
-                              <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Precio/kg ($) *</label>
+                              <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>
+                                Precio/{editForm.unit_type === 'u' ? 'u' : 'kg'} ($) *
+                              </label>
                               <input
                                 type="number"
                                 inputMode="decimal"
@@ -827,16 +890,29 @@ const RemitosHistory = ({ addToast }) => {
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: '#6b7280' }}>
-                          <div>
-                            <span className="font-bold">Pesos:</span>{' '}
-                            {weights.length > 0 ? weights.join(', ') : '—'}
-                          </div>
-                          <div>
-                            <span className="font-bold">Total kg:</span> {totalWeight.toFixed(2)}
-                          </div>
-                          <div>
-                            <span className="font-bold">Precio/kg:</span> ${fmtMoney(item.unit_price)}
-                          </div>
+                          {ut === 'u' ? (
+                            <>
+                              <div>
+                                <span className="font-bold">Cantidad:</span> {totalWeight} u
+                              </div>
+                              <div>
+                                <span className="font-bold">Precio/u:</span> ${fmtMoney(item.unit_price)}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <span className="font-bold">Pesos:</span>{' '}
+                                {weights.length > 0 ? weights.join(', ') : '—'}
+                              </div>
+                              <div>
+                                <span className="font-bold">Total kg:</span> {totalWeight.toFixed(2)}
+                              </div>
+                              <div>
+                                <span className="font-bold">Precio/kg:</span> ${fmtMoney(item.unit_price)}
+                              </div>
+                            </>
+                          )}
                           <div>
                             <span className="font-bold">Subtotal:</span>{' '}
                             <span style={{ color: '#8B0000' }}>${fmtMoney(item.total_item)}</span>

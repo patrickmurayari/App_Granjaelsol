@@ -15,7 +15,7 @@ const InventoryManager = ({ addToast }) => {
     supplier_id: '',
     invoice_number: '',
     entry_date: new Date().toISOString().split('T')[0],
-    items: [{ product_name: '', weights: '', unit_price: '' }],
+    items: [{ product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
     iva_21: '',
     percepcion_iva: '',
     percepcion_iibb: '',
@@ -65,7 +65,7 @@ const InventoryManager = ({ addToast }) => {
         supplier_id: entryForm.supplier_id,
         invoice_number: '',
         entry_date: new Date().toISOString().split('T')[0],
-        items: [{ product_name: '', weights: '', unit_price: '' }],
+        items: [{ product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
         iva_21: '',
         percepcion_iva: '',
         percepcion_iibb: '',
@@ -116,12 +116,16 @@ const InventoryManager = ({ addToast }) => {
   // Cálculo en tiempo real del subtotal neto (suma de items)
   const subtotalNeto = useMemo(() => {
     return entryForm.items.reduce((sum, item) => {
+      const price = Number(item.unit_price) || 0;
+      if (item.unit_type === 'u') {
+        const qty = Number(item.weights) || 0;
+        return sum + Math.round(qty * price * 100) / 100;
+      }
       const weights = item.weights
         .split(/[,;\s-]+/)
         .map(Number)
         .filter((n) => !isNaN(n) && n > 0);
       const totalWeight = weights.reduce((s, w) => s + w, 0);
-      const price = Number(item.unit_price) || 0;
       return sum + Math.round(totalWeight * price * 100) / 100;
     }, 0);
   }, [entryForm.items]);
@@ -149,7 +153,7 @@ const InventoryManager = ({ addToast }) => {
   const addEntryItem = () => {
     setEntryForm((prev) => ({
       ...prev,
-      items: [...prev.items, { product_name: '', weights: '', unit_price: '' }],
+      items: [...prev.items, { product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
     }));
   };
 
@@ -164,16 +168,30 @@ const InventoryManager = ({ addToast }) => {
   const submitEntry = (e) => {
     e.preventDefault();
     const processedItems = entryForm.items.map((item) => {
+      const ut = item.unit_type || 'kg';
+      if (ut === 'u') {
+        const qty = Number(item.weights);
+        return {
+          product_name: item.product_name.trim(),
+          unit_type: 'u',
+          quantity: qty,
+          unit_price: Number(item.unit_price),
+        };
+      }
       const weights = item.weights
         .split(/[,;\s-]+/)
         .map(Number)
         .filter((n) => !isNaN(n) && n > 0);
       return {
         product_name: item.product_name.trim(),
+        unit_type: 'kg',
         weights,
         unit_price: Number(item.unit_price),
       };
-    }).filter((item) => item.product_name && item.weights.length > 0 && item.unit_price > 0);
+    }).filter((item) => {
+      if (item.unit_type === 'u') return item.product_name && item.quantity > 0 && item.unit_price > 0;
+      return item.product_name && item.weights.length > 0 && item.unit_price > 0;
+    });
 
     if (processedItems.length === 0) return;
 
@@ -435,20 +453,66 @@ const InventoryManager = ({ addToast }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-text-dark mb-1">Pesos (kg) *</label>
-                      <input
-                        type="text"
-                        inputMode="text"
-                        value={item.weights}
-                        onChange={(e) => handleEntryItemChange(idx, 'weights', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                        placeholder="94, 95, 99"
-                        required
-                      />
-                      <p className="text-[10px] text-text-dark/50 mt-1">Separá con comas o guiones</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <label className="block text-xs font-bold text-text-dark">
+                          {item.unit_type === 'u' ? 'Cantidad (u)' : 'Pesos (kg)'} *
+                        </label>
+                        <div className="flex rounded-lg border-2 border-gray-200 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => handleEntryItemChange(idx, 'unit_type', 'kg')}
+                            className={`px-2 py-0.5 text-[10px] font-bold transition ${
+                              item.unit_type !== 'u'
+                                ? 'bg-primary text-white'
+                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            Kg
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEntryItemChange(idx, 'unit_type', 'u')}
+                            className={`px-2 py-0.5 text-[10px] font-bold transition ${
+                              item.unit_type === 'u'
+                                ? 'bg-primary text-white'
+                                : 'bg-white text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            U
+                          </button>
+                        </div>
+                      </div>
+                      {item.unit_type === 'u' ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={item.weights}
+                          onChange={(e) => handleEntryItemChange(idx, 'weights', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                          style={{ color: '#111827' }}
+                          placeholder="3"
+                          required
+                        />
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            inputMode="text"
+                            value={item.weights}
+                            onChange={(e) => handleEntryItemChange(idx, 'weights', e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                            placeholder="94, 95, 99"
+                            required
+                          />
+                          <p className="text-[10px] text-text-dark/50 mt-1">Separá con comas o guiones</p>
+                        </>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-text-dark mb-1">Precio/kg ($) *</label>
+                      <label className="block text-xs font-bold text-text-dark mb-1">
+                        Precio/{item.unit_type === 'u' ? 'u' : 'kg'} ($) *
+                      </label>
                       <input
                         type="text"
                         inputMode="text"
@@ -462,12 +526,22 @@ const InventoryManager = ({ addToast }) => {
                   </div>
                   {/* Subtotal del item en tiempo real */}
                   {item.weights && item.unit_price && (() => {
+                    const price = Number(item.unit_price);
+                    if (item.unit_type === 'u') {
+                      const qty = Number(item.weights);
+                      const sub = Math.round(qty * price * 100) / 100;
+                      return qty > 0 ? (
+                        <div className="mt-2 text-xs sm:text-sm font-bold text-primary">
+                          {qty} u × ${price.toLocaleString('es-AR')} = ${sub.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                        </div>
+                      ) : null;
+                    }
                     const weights = item.weights.split(/[,;\s-]+/).map(Number).filter((n) => !isNaN(n) && n > 0);
                     const totalW = weights.reduce((s, w) => s + w, 0);
-                    const sub = Math.round(totalW * Number(item.unit_price) * 100) / 100;
+                    const sub = Math.round(totalW * price * 100) / 100;
                     return totalW > 0 ? (
                       <div className="mt-2 text-xs sm:text-sm font-bold text-primary">
-                        {totalW.toFixed(2)} kg × ${Number(item.unit_price).toLocaleString('es-AR')} = ${sub.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                        {totalW.toFixed(2)} kg × ${price.toLocaleString('es-AR')} = ${sub.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </div>
                     ) : null;
                   })()}
