@@ -18,6 +18,7 @@ const RemitosHistory = ({ addToast }) => {
   const [editingPaymentId, setEditingPaymentId] = useState(null);
   const [editPaymentForm, setEditPaymentForm] = useState({ payment_date: '', method: '', amount_haber: '' });
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
+  const [deletingEntryId, setDeletingEntryId] = useState(null);
 
   const {
     data: suppliers,
@@ -107,6 +108,23 @@ const RemitosHistory = ({ addToast }) => {
     },
     onError: () => {
       addToast('Error al eliminar producto. Intenta nuevamente.', 'error');
+    },
+  });
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: async (entryId) => {
+      const { data } = await api.delete(`/inventory/entries/${entryId}`);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['supplier-entries', remitosSupplier] });
+      await queryClient.invalidateQueries({ queryKey: ['supplier-balance', remitosSupplier] });
+      setSelectedEntry(null);
+      setDeletingEntryId(null);
+      addToast('Remito eliminado correctamente');
+    },
+    onError: () => {
+      addToast('Error al eliminar remito. Intenta nuevamente.', 'error');
     },
   });
 
@@ -372,22 +390,49 @@ const RemitosHistory = ({ addToast }) => {
                                 {filteredEntries.map((entry) => (
                                   <tr
                                     key={entry.id}
-                                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition"
-                                    onClick={() => setSelectedEntry(entry.id)}
+                                    className="border-b border-gray-100 hover:bg-gray-50 transition"
                                   >
-                                    <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
+                                    <td
+                                      className="py-3 px-4 font-bold cursor-pointer"
+                                      style={{ color: '#111827' }}
+                                      onClick={() => setSelectedEntry(entry.id)}
+                                    >
                                       {new Date(entry.entry_date).toLocaleDateString('es-AR')}
                                     </td>
-                                    <td className="py-3 px-4" style={{ color: '#6b7280' }}>
+                                    <td
+                                      className="py-3 px-4 cursor-pointer"
+                                      style={{ color: '#6b7280' }}
+                                      onClick={() => setSelectedEntry(entry.id)}
+                                    >
                                       {entry.invoice_number || '—'}
                                     </td>
-                                    <td className="py-3 px-4 text-right font-extrabold" style={{ color: '#8B0000' }}>
+                                    <td
+                                      className="py-3 px-4 text-right font-extrabold cursor-pointer"
+                                      style={{ color: '#8B0000' }}
+                                      onClick={() => setSelectedEntry(entry.id)}
+                                    >
                                       ${fmtMoney(entry.total_debe)}
                                     </td>
                                     <td className="py-3 px-4 text-right">
-                                      <span className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10" style={{ color: '#8B0000' }}>
-                                        Ver detalle
-                                      </span>
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          onClick={() => setSelectedEntry(entry.id)}
+                                          className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition"
+                                          style={{ color: '#8B0000' }}
+                                        >
+                                          Ver detalle
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeletingEntryId(entry.id);
+                                          }}
+                                          className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
+                                          title="Eliminar remito"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
                                     </td>
                                   </tr>
                                 ))}
@@ -397,30 +442,45 @@ const RemitosHistory = ({ addToast }) => {
 
                           <div className="sm:hidden space-y-3">
                             {filteredEntries.map((entry) => (
-                              <button
+                              <div
                                 key={entry.id}
-                                onClick={() => setSelectedEntry(entry.id)}
-                                className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 bg-white text-left transition-all"
+                                className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 bg-white transition-all"
                               >
                                 <div className="flex justify-between items-start">
-                                  <div>
+                                  <button
+                                    onClick={() => setSelectedEntry(entry.id)}
+                                    className="flex-1 text-left"
+                                  >
                                     <div className="font-bold text-sm" style={{ color: '#111827' }}>
                                       {new Date(entry.entry_date).toLocaleDateString('es-AR')}
                                     </div>
                                     <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
                                       Remito: {entry.invoice_number || '—'}
                                     </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="font-extrabold text-base" style={{ color: '#8B0000' }}>
-                                      ${fmtMoney(entry.total_debe)}
+                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-right">
+                                      <div className="font-extrabold text-base" style={{ color: '#8B0000' }}>
+                                        ${fmtMoney(entry.total_debe)}
+                                      </div>
+                                      <button
+                                        onClick={() => setSelectedEntry(entry.id)}
+                                        className="text-[10px] font-bold mt-0.5"
+                                        style={{ color: '#8B0000' }}
+                                      >
+                                        Ver detalle →
+                                      </button>
                                     </div>
-                                    <div className="text-[10px] font-bold mt-0.5" style={{ color: '#8B0000' }}>
-                                      Ver detalle →
-                                    </div>
+                                    <button
+                                      onClick={() => setDeletingEntryId(entry.id)}
+                                      className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
+                                      title="Eliminar remito"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                   </div>
                                 </div>
-                              </button>
+                              </div>
                             ))}
                           </div>
                         </>
@@ -924,6 +984,50 @@ const RemitosHistory = ({ addToast }) => {
                 </div>
               </>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {deletingEntryId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-[60]" onClick={() => setDeletingEntryId(null)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-200 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-700" />
+              </div>
+              <h3 className="text-base sm:text-lg font-heading font-extrabold" style={{ color: '#111827' }}>
+                ¿Eliminar remito completo?
+              </h3>
+            </div>
+            <p className="text-sm text-text-dark/70 mb-5">
+              Esta acción no se puede deshacer. Se eliminarán todos los productos cargados en el remito y el saldo del proveedor se actualizará automáticamente.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeletingEntryId(null)}
+                className="px-4 py-2 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition"
+                style={{ color: '#111827' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteEntryMutation.mutate(deletingEntryId)}
+                disabled={deleteEntryMutation.isPending}
+                className="px-4 py-2 rounded-xl font-bold text-sm bg-red-700 text-white hover:bg-red-800 transition disabled:opacity-60 flex items-center gap-2"
+              >
+                {deleteEntryMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar remito
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
