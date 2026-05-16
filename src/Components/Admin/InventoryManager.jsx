@@ -16,6 +16,9 @@ const InventoryManager = ({ addToast }) => {
     invoice_number: '',
     entry_date: new Date().toISOString().split('T')[0],
     items: [{ product_name: '', weights: '', unit_price: '' }],
+    iva_21: '',
+    percepcion_iva: '',
+    percepcion_iibb: '',
   });
   const [paymentForm, setPaymentForm] = useState({
     supplier_id: '',
@@ -63,6 +66,9 @@ const InventoryManager = ({ addToast }) => {
         invoice_number: '',
         entry_date: new Date().toISOString().split('T')[0],
         items: [{ product_name: '', weights: '', unit_price: '' }],
+        iva_21: '',
+        percepcion_iva: '',
+        percepcion_iibb: '',
       });
       addToast('Remito registrado correctamente');
     },
@@ -107,8 +113,8 @@ const InventoryManager = ({ addToast }) => {
     },
   });
 
-  // Cálculo en tiempo real del total del remito
-  const entryTotal = useMemo(() => {
+  // Cálculo en tiempo real del subtotal neto (suma de items)
+  const subtotalNeto = useMemo(() => {
     return entryForm.items.reduce((sum, item) => {
       const weights = item.weights
         .split(/[,;\s-]+/)
@@ -119,6 +125,14 @@ const InventoryManager = ({ addToast }) => {
       return sum + Math.round(totalWeight * price * 100) / 100;
     }, 0);
   }, [entryForm.items]);
+
+  // Total factura con impuestos
+  const totalFactura = useMemo(() => {
+    const iva = Number(entryForm.iva_21) || 0;
+    const percIva = Number(entryForm.percepcion_iva) || 0;
+    const percIibb = Number(entryForm.percepcion_iibb) || 0;
+    return Math.round((subtotalNeto + iva + percIva + percIibb) * 100) / 100;
+  }, [subtotalNeto, entryForm.iva_21, entryForm.percepcion_iva, entryForm.percepcion_iibb]);
 
   const handleSelectSupplier = (id) => {
     setSelectedSupplier(id);
@@ -168,6 +182,9 @@ const InventoryManager = ({ addToast }) => {
       invoice_number: entryForm.invoice_number || null,
       entry_date: entryForm.entry_date,
       items: processedItems,
+      iva_21: Number(entryForm.iva_21) || 0,
+      percepcion_iva: Number(entryForm.percepcion_iva) || 0,
+      percepcion_iibb: Number(entryForm.percepcion_iibb) || 0,
     });
   };
 
@@ -467,19 +484,90 @@ const InventoryManager = ({ addToast }) => {
               Añadir otro producto
             </button>
 
-            {/* Total estimado en tiempo real */}
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-              <div className="flex justify-between items-center">
-                <span className="text-sm sm:text-base font-bold text-amber-800">Total Estimado del Remito:</span>
-                <span className="text-xl sm:text-2xl font-extrabold text-amber-700">
-                  ${entryTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+            {/* ── Totales e Impuestos ── */}
+            <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Banknote className="w-4 h-4 text-gray-700" />
+                <span className="text-sm sm:text-base font-extrabold" style={{ color: '#111827' }}>Totales e Impuestos</span>
+              </div>
+
+              {/* Subtotal Neto (solo lectura) */}
+              <div className="flex justify-between items-center bg-white rounded-lg px-3 py-2 border border-gray-200">
+                <span className="text-xs sm:text-sm font-bold" style={{ color: '#111827' }}>Subtotal Neto</span>
+                <span className="text-sm sm:text-base font-extrabold" style={{ color: '#111827' }}>
+                  ${subtotalNeto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              {/* IVA 21% */}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-xs sm:text-sm font-bold" style={{ color: '#111827' }}>IVA (21%)</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const calc = Math.round(subtotalNeto * 0.21 * 100) / 100;
+                      setEntryForm((prev) => ({ ...prev, iva_21: calc.toString() }));
+                    }}
+                    className="text-[10px] sm:text-xs px-2 py-0.5 rounded-lg bg-blue-100 text-blue-700 font-bold hover:bg-blue-200 transition"
+                  >
+                    Calcular 21%
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={entryForm.iva_21}
+                  onChange={(e) => setEntryForm((prev) => ({ ...prev, iva_21: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  style={{ color: '#111827' }}
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Percepción IVA */}
+              <div>
+                <label className="block text-xs sm:text-sm font-bold mb-1" style={{ color: '#111827' }}>Perc. IVA</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={entryForm.percepcion_iva}
+                  onChange={(e) => setEntryForm((prev) => ({ ...prev, percepcion_iva: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  style={{ color: '#111827' }}
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Percepción IIBB */}
+              <div>
+                <label className="block text-xs sm:text-sm font-bold mb-1" style={{ color: '#111827' }}>Perc. IIBB</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={entryForm.percepcion_iibb}
+                  onChange={(e) => setEntryForm((prev) => ({ ...prev, percepcion_iibb: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  style={{ color: '#111827' }}
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Total Factura (Debe) */}
+              <div className="flex justify-between items-center bg-amber-50 rounded-lg px-3 py-2.5 border-2 border-amber-200">
+                <span className="text-sm sm:text-base font-bold text-amber-800">Total Factura (Debe)</span>
+                <span className="text-lg sm:text-xl font-extrabold text-amber-700">
+                  ${totalFactura.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={createEntryMutation.isPending || entryTotal === 0}
+              disabled={createEntryMutation.isPending || totalFactura === 0}
               className="w-full bg-primary text-white py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base hover:bg-secondary transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {createEntryMutation.isPending ? (
