@@ -433,8 +433,8 @@ const InventoryManager = ({ addToast }) => {
                     <div>
                       <label className="block text-xs font-bold text-text-dark mb-1">Precio/kg ($) *</label>
                       <input
-                        type="number"
-                        inputMode="decimal"
+                        type="text"
+                        inputMode="text"
                         value={item.unit_price}
                         onChange={(e) => handleEntryItemChange(idx, 'unit_price', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
