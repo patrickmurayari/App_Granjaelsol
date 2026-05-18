@@ -19,6 +19,12 @@ const RemitosHistory = ({ addToast }) => {
   const [editPaymentForm, setEditPaymentForm] = useState({ payment_date: '', method: '', amount_haber: '' });
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [deletingEntryId, setDeletingEntryId] = useState(null);
+  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
+  const [adjustmentForm, setAdjustmentForm] = useState({
+    entry_date: new Date().toISOString().split('T')[0],
+    total_debe: '',
+    adjustment_notes: '',
+  });
 
   const {
     data: suppliers,
@@ -125,6 +131,27 @@ const RemitosHistory = ({ addToast }) => {
     },
     onError: () => {
       addToast('Error al eliminar remito. Intenta nuevamente.', 'error');
+    },
+  });
+
+  const createAdjustmentMutation = useMutation({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/inventory/entries', payload);
+      return data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['supplier-entries', remitosSupplier] });
+      await queryClient.invalidateQueries({ queryKey: ['supplier-balance', remitosSupplier] });
+      setShowAdjustmentModal(false);
+      setAdjustmentForm({
+        entry_date: new Date().toISOString().split('T')[0],
+        total_debe: '',
+        adjustment_notes: '',
+      });
+      addToast('Ajuste de saldo registrado correctamente');
+    },
+    onError: () => {
+      addToast('Error al registrar ajuste. Verificá los datos.', 'error');
     },
   });
 
@@ -350,23 +377,32 @@ const RemitosHistory = ({ addToast }) => {
                     </div>
                   ) : (
                     <>
-                      <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type="text"
-                          placeholder="Buscar por número de remito..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
-                        />
-                        {searchTerm && (
-                          <button
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
+                      <div className="relative mb-4 flex gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <input
+                            type="text"
+                            placeholder="Buscar por número de remito..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
+                          />
+                          {searchTerm && (
+                            <button
+                              onClick={() => setSearchTerm('')}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setShowAdjustmentModal(true)}
+                          className="px-3 py-2.5 rounded-xl font-bold text-xs bg-primary text-white hover:bg-secondary transition flex items-center gap-1.5 whitespace-nowrap"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          + Ajuste / Saldo Inicial
+                        </button>
                       </div>
 
                       {filteredEntries.length === 0 ? (
@@ -387,41 +423,54 @@ const RemitosHistory = ({ addToast }) => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {filteredEntries.map((entry) => (
+                                {filteredEntries.map((entry) => {
+                                  const isAdj = entry.is_adjustment === true;
+                                  return (
                                   <tr
                                     key={entry.id}
-                                    className="border-b border-gray-100 hover:bg-gray-50 transition"
+                                    className={`border-b border-gray-100 hover:bg-gray-50 transition ${isAdj ? 'bg-amber-50/50' : ''}`}
                                   >
                                     <td
                                       className="py-3 px-4 font-bold cursor-pointer"
                                       style={{ color: '#111827' }}
-                                      onClick={() => setSelectedEntry(entry.id)}
+                                      onClick={() => !isAdj && setSelectedEntry(entry.id)}
                                     >
                                       {new Date(entry.entry_date).toLocaleDateString('es-AR')}
                                     </td>
                                     <td
                                       className="py-3 px-4 cursor-pointer"
                                       style={{ color: '#6b7280' }}
-                                      onClick={() => setSelectedEntry(entry.id)}
+                                      onClick={() => !isAdj && setSelectedEntry(entry.id)}
                                     >
-                                      {entry.invoice_number || '—'}
+                                      {isAdj ? (
+                                        <span className="inline-flex items-center gap-1.5">
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 text-amber-800 uppercase tracking-wide">Ajuste</span>
+                                          {entry.adjustment_notes || '—'}
+                                        </span>
+                                      ) : (entry.invoice_number || '—')}
                                     </td>
                                     <td
                                       className="py-3 px-4 text-right font-extrabold cursor-pointer"
                                       style={{ color: '#8B0000' }}
-                                      onClick={() => setSelectedEntry(entry.id)}
+                                      onClick={() => !isAdj && setSelectedEntry(entry.id)}
                                     >
                                       ${fmtMoney(entry.total_debe)}
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                       <div className="flex items-center justify-end gap-2">
-                                        <button
-                                          onClick={() => setSelectedEntry(entry.id)}
-                                          className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition"
-                                          style={{ color: '#8B0000' }}
-                                        >
-                                          Ver detalle
-                                        </button>
+                                        {isAdj ? (
+                                          <span className="text-xs text-amber-700 font-bold italic">
+                                            Ajuste manual
+                                          </span>
+                                        ) : (
+                                          <button
+                                            onClick={() => setSelectedEntry(entry.id)}
+                                            className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition"
+                                            style={{ color: '#8B0000' }}
+                                          >
+                                            Ver detalle
+                                          </button>
+                                        )}
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -435,41 +484,54 @@ const RemitosHistory = ({ addToast }) => {
                                       </div>
                                     </td>
                                   </tr>
-                                ))}
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
 
                           <div className="sm:hidden space-y-3">
-                            {filteredEntries.map((entry) => (
+                            {filteredEntries.map((entry) => {
+                              const isAdj = entry.is_adjustment === true;
+                              return (
                               <div
                                 key={entry.id}
-                                className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 bg-white transition-all"
+                                className={`p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 transition-all ${isAdj ? 'bg-amber-50/50 border-amber-200' : 'bg-white'}`}
                               >
                                 <div className="flex justify-between items-start">
-                                  <button
-                                    onClick={() => setSelectedEntry(entry.id)}
-                                    className="flex-1 text-left"
-                                  >
+                                  <div className="flex-1">
                                     <div className="font-bold text-sm" style={{ color: '#111827' }}>
                                       {new Date(entry.entry_date).toLocaleDateString('es-AR')}
                                     </div>
-                                    <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
-                                      Remito: {entry.invoice_number || '—'}
-                                    </div>
-                                  </button>
+                                    {isAdj ? (
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 text-amber-800 uppercase tracking-wide">Ajuste</span>
+                                        <span className="text-xs" style={{ color: '#6b7280' }}>{entry.adjustment_notes || ''}</span>
+                                      </div>
+                                    ) : (
+                                      <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                                        Remito: {entry.invoice_number || '—'}
+                                      </div>
+                                    )}
+                                  </div>
                                   <div className="flex items-center gap-2">
                                     <div className="text-right">
                                       <div className="font-extrabold text-base" style={{ color: '#8B0000' }}>
                                         ${fmtMoney(entry.total_debe)}
                                       </div>
-                                      <button
-                                        onClick={() => setSelectedEntry(entry.id)}
-                                        className="text-[10px] font-bold mt-0.5"
-                                        style={{ color: '#8B0000' }}
-                                      >
-                                        Ver detalle →
-                                      </button>
+                                      {isAdj ? (
+                                        <div className="text-[10px] font-bold mt-0.5 text-amber-700 italic">
+                                          Ajuste manual
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => setSelectedEntry(entry.id)}
+                                          className="text-[10px] font-bold mt-0.5"
+                                          style={{ color: '#8B0000' }}
+                                        >
+                                          Ver detalle →
+                                        </button>
+                                      )}
                                     </div>
                                     <button
                                       onClick={() => setDeletingEntryId(entry.id)}
@@ -481,7 +543,8 @@ const RemitosHistory = ({ addToast }) => {
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </>
                       )}
@@ -1116,6 +1179,104 @@ const RemitosHistory = ({ addToast }) => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showAdjustmentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-[60]" onClick={() => setShowAdjustmentModal(false)}>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-amber-700" />
+              </div>
+              <h3 className="text-base sm:text-lg font-heading font-extrabold" style={{ color: '#111827' }}>
+                Cargar Ajuste / Saldo Inicial
+              </h3>
+            </div>
+            <p className="text-sm text-text-dark/70 mb-4">
+              Registra un ajuste manual en la cuenta corriente del proveedor. No requiere carga de productos.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const amount = Number(adjustmentForm.total_debe);
+                if (!amount) return;
+                createAdjustmentMutation.mutate({
+                  supplier_id: remitosSupplier,
+                  is_adjustment: true,
+                  entry_date: adjustmentForm.entry_date,
+                  total_debe: amount,
+                  adjustment_notes: adjustmentForm.adjustment_notes.trim() || null,
+                });
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Fecha *</label>
+                <input
+                  type="date"
+                  value={adjustmentForm.entry_date}
+                  onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, entry_date: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  style={{ color: '#111827' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Monto del Ajuste ($) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={adjustmentForm.total_debe}
+                  onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, total_debe: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  style={{ color: '#111827' }}
+                  placeholder="Ej: 150000 o -50000"
+                  required
+                />
+                <p className="text-[10px] text-text-dark/50 mt-1">Usá valor positivo (deuda) o negativo (descuento)</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Observaciones / Notas</label>
+                <textarea
+                  value={adjustmentForm.adjustment_notes}
+                  onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, adjustment_notes: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm resize-none"
+                  style={{ color: '#111827' }}
+                  rows={2}
+                  placeholder="Ej: Saldo de arrastre previo al sistema"
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAdjustmentModal(false)}
+                  className="px-4 py-2 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition"
+                  style={{ color: '#111827' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={createAdjustmentMutation.isPending || !adjustmentForm.total_debe}
+                  className="px-4 py-2 rounded-xl font-bold text-sm bg-amber-600 text-white hover:bg-amber-700 transition disabled:opacity-60 flex items-center gap-2"
+                >
+                  {createAdjustmentMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="w-4 h-4" />
+                      Registrar Ajuste
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
