@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import PropTypes from 'prop-types';
 import api from '../../api/api';
+import { formatDate, getTodayLocal } from '../../utils/dateUtils';
 import {
   FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet
 } from 'lucide-react';
@@ -21,7 +22,7 @@ const RemitosHistory = ({ addToast }) => {
   const [deletingEntryId, setDeletingEntryId] = useState(null);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [adjustmentForm, setAdjustmentForm] = useState({
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: getTodayLocal(),
     total_debe: '',
     adjustment_notes: '',
   });
@@ -144,7 +145,7 @@ const RemitosHistory = ({ addToast }) => {
       await queryClient.invalidateQueries({ queryKey: ['supplier-balance', remitosSupplier] });
       setShowAdjustmentModal(false);
       setAdjustmentForm({
-        entry_date: new Date().toISOString().split('T')[0],
+        entry_date: getTodayLocal(),
         total_debe: '',
         adjustment_notes: '',
       });
@@ -282,6 +283,7 @@ const RemitosHistory = ({ addToast }) => {
 
   const fmtMoney = (n) => Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2 });
   const fmtMethod = (m) => (m ? m.charAt(0).toUpperCase() + m.slice(1) : '—');
+  const fmtDate = formatDate;
 
   return (
     <>
@@ -435,7 +437,7 @@ const RemitosHistory = ({ addToast }) => {
                                       style={{ color: '#111827' }}
                                       onClick={() => !isAdj && setSelectedEntry(entry.id)}
                                     >
-                                      {new Date(entry.entry_date).toLocaleDateString('es-AR')}
+                                      {fmtDate(entry.entry_date)}
                                     </td>
                                     <td
                                       className="py-3 px-4 cursor-pointer"
@@ -501,7 +503,7 @@ const RemitosHistory = ({ addToast }) => {
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1">
                                     <div className="font-bold text-sm" style={{ color: '#111827' }}>
-                                      {new Date(entry.entry_date).toLocaleDateString('es-AR')}
+                                      {fmtDate(entry.entry_date)}
                                     </div>
                                     {isAdj ? (
                                       <div className="flex items-center gap-1.5 mt-0.5">
@@ -669,7 +671,7 @@ const RemitosHistory = ({ addToast }) => {
                               return (
                                 <tr key={pay.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                                   <td className="py-3 px-4 font-bold" style={{ color: '#111827' }}>
-                                    {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                                    {fmtDate(pay.payment_date)}
                                   </td>
                                   <td className="py-3 px-4" style={{ color: '#6b7280' }}>
                                     {fmtMethod(pay.method)}
@@ -787,7 +789,7 @@ const RemitosHistory = ({ addToast }) => {
                               <div className="flex justify-between items-start">
                                 <div>
                                   <div className="font-bold text-sm" style={{ color: '#111827' }}>
-                                    {new Date(pay.payment_date).toLocaleDateString('es-AR')}
+                                    {fmtDate(pay.payment_date)}
                                   </div>
                                   <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
                                     {fmtMethod(pay.method)}
@@ -841,7 +843,7 @@ const RemitosHistory = ({ addToast }) => {
                     <div>
                       <h2 className="text-lg sm:text-xl font-heading font-extrabold" style={{ color: '#111827' }}>Detalle del Remito</h2>
                       <p className="text-xs sm:text-sm mt-0.5" style={{ color: '#6b7280' }}>
-                        {new Date(entryDetail.entry.entry_date).toLocaleDateString('es-AR')}
+                        {fmtDate(entryDetail.entry.entry_date)}
                         {entryDetail.entry.invoice_number ? ` — ${entryDetail.entry.invoice_number}` : ''}
                       </p>
                     </div>

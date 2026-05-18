@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
+import { getTodayLocal } from '../../utils/dateUtils';
 import PropTypes from 'prop-types';
 import {
   Truck, Plus, FileText, Scale, Banknote, CreditCard, Loader2, AlertCircle, Trash2
@@ -14,7 +15,7 @@ const InventoryManager = ({ addToast }) => {
   const [entryForm, setEntryForm] = useState({
     supplier_id: '',
     invoice_number: '',
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: getTodayLocal(),
     items: [{ product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
     iva_21: '',
     percepcion_iva: '',
@@ -22,7 +23,7 @@ const InventoryManager = ({ addToast }) => {
   });
   const [paymentForm, setPaymentForm] = useState({
     supplier_id: '',
-    payment_date: new Date().toISOString().split('T')[0],
+    payment_date: getTodayLocal(),
     method: 'efectivo',
     amount_haber: '',
   });
@@ -64,7 +65,7 @@ const InventoryManager = ({ addToast }) => {
       setEntryForm({
         supplier_id: entryForm.supplier_id,
         invoice_number: '',
-        entry_date: new Date().toISOString().split('T')[0],
+        entry_date: getTodayLocal(),
         items: [{ product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
         iva_21: '',
         percepcion_iva: '',

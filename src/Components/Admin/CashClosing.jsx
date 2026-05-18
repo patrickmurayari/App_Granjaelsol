@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
+import { getTodayLocal, formatDate } from '../../utils/dateUtils';
 import {
   Calculator, DollarSign, FileText, CreditCard, Calendar, Loader2, AlertCircle, CheckCircle, X, Pencil
 } from 'lucide-react';
@@ -55,7 +56,7 @@ const CashClosing = () => {
     },
   });
 
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = getTodayLocal();
   const cierreHoy = cierres?.find((c) => c.fecha === hoy);
 
   useEffect(() => {
@@ -374,14 +375,7 @@ const CashClosing = () => {
                       className={`border-t border-gray-100 ${esHoy ? 'bg-primary/5' : ''}`}
                     >
                       <td className="px-3 sm:px-4 py-2 sm:py-3 font-medium">
-                        {(() => {
-                          const fecha = c.fecha instanceof Date ? c.fecha : new Date(c.fecha);
-                          return fecha.toLocaleDateString('es-AR', {
-                            weekday: 'short',
-                            day: '2-digit',
-                            month: 'short',
-                          });
-                        })()}
+                        {formatDate(c.fecha)}
                         {esHoy && (
                           <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
                             Hoy
