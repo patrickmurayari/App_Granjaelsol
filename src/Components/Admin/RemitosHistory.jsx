@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import api from '../../api/api';
 import { formatDate, getTodayLocal } from '../../utils/dateUtils';
 import {
-  FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet
+  FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet, ChevronLeft, ChevronRight, ClipboardCopy, TrendingUp
 } from 'lucide-react';
 
 const RemitosHistory = ({ addToast }) => {
@@ -20,6 +20,7 @@ const RemitosHistory = ({ addToast }) => {
   const [editPaymentForm, setEditPaymentForm] = useState({ payment_date: '', method: '', amount_haber: '' });
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [deletingEntryId, setDeletingEntryId] = useState(null);
+  const [statementWeekOffset, setStatementWeekOffset] = useState(0);
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [adjustmentForm, setAdjustmentForm] = useState({
     entry_date: getTodayLocal(),
@@ -75,6 +76,34 @@ const RemitosHistory = ({ addToast }) => {
       return data;
     },
     enabled: !!remitosSupplier && supplierTab === 'pagos',
+  });
+
+  // ── Statement week calculation ──
+  const getWeekRange = (offset) => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=domingo
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset + offset * 7);
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { startDate: fmt(monday), endDate: fmt(sunday), monday, sunday };
+  };
+
+  const statementWeek = getWeekRange(statementWeekOffset);
+
+  const {
+    data: statementData,
+    isLoading: loadingStatement,
+    isError: errorStatement,
+  } = useQuery({
+    queryKey: ['supplier-statement', remitosSupplier, statementWeek.startDate, statementWeek.endDate],
+    queryFn: async () => {
+      const { data } = await api.get(`/inventory/suppliers/${remitosSupplier}/statement`, {
+        params: { startDate: statementWeek.startDate, endDate: statementWeek.endDate },
+      });
+      return data;
+    },
+    enabled: !!remitosSupplier && supplierTab === 'estado',
   });
 
   const filteredEntries = useMemo(() => {
@@ -299,7 +328,7 @@ const RemitosHistory = ({ addToast }) => {
             </div>
             {remitosSupplier && (
               <button
-                onClick={() => { setRemitosSupplier(null); setSelectedEntry(null); setSearchTerm(''); setSupplierTab('remitos'); }}
+                onClick={() => { setRemitosSupplier(null); setSelectedEntry(null); setSearchTerm(''); setSupplierTab('remitos'); setStatementWeekOffset(0); }}
                 className="px-3 py-2 rounded-xl border-2 border-gray-200 font-bold text-xs sm:text-sm hover:border-primary transition"
                 style={{ color: '#111827' }}
               >
@@ -335,10 +364,10 @@ const RemitosHistory = ({ addToast }) => {
             )
           ) : (
             <>
-              <div className="flex gap-2 mb-4">
+              <div className="grid grid-cols-2 md:flex md:gap-2 gap-2 mb-4">
                 <button
                   onClick={() => setSupplierTab('remitos')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
                     supplierTab === 'remitos'
                       ? 'bg-primary text-white shadow-lg'
                       : 'bg-white text-gray-900 border border-gray-200 hover:border-primary'
@@ -349,7 +378,7 @@ const RemitosHistory = ({ addToast }) => {
                 </button>
                 <button
                   onClick={() => setSupplierTab('pagos')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
                     supplierTab === 'pagos'
                       ? 'bg-primary text-white shadow-lg'
                       : 'bg-white text-gray-900 border border-gray-200 hover:border-primary'
@@ -357,6 +386,17 @@ const RemitosHistory = ({ addToast }) => {
                 >
                   <CreditCard className="w-4 h-4" />
                   Historial de Pagos
+                </button>
+                <button
+                  onClick={() => setSupplierTab('estado')}
+                  className={`col-span-2 md:col-span-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                    supplierTab === 'estado'
+                      ? 'bg-primary text-white shadow-lg'
+                      : 'bg-white text-gray-900 border border-gray-200 hover:border-primary'
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Estado de Cuenta
                 </button>
               </div>
 
@@ -821,6 +861,172 @@ const RemitosHistory = ({ addToast }) => {
                       </div>
                     </>
                   )}
+                </>
+              )}
+
+              {supplierTab === 'estado' && (
+                <>
+                  {/* Week selector */}
+                  <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-xl px-4 py-3">
+                    <button
+                      onClick={() => setStatementWeekOffset((prev) => prev - 1)}
+                      className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition"
+                    >
+                      <ChevronLeft className="w-5 h-5" style={{ color: '#111827' }} />
+                    </button>
+                    <div className="text-center">
+                      <div className="font-extrabold text-sm" style={{ color: '#111827' }}>
+                        Semana del {formatDate(statementWeek.startDate)} al {formatDate(statementWeek.endDate)}
+                      </div>
+                      {statementWeekOffset === 0 && (
+                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">Semana actual</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setStatementWeekOffset((prev) => prev + 1)}
+                      className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition"
+                    >
+                      <ChevronRight className="w-5 h-5" style={{ color: '#111827' }} />
+                    </button>
+                  </div>
+
+                  {loadingStatement ? (
+                    <div className="text-center py-10 flex items-center justify-center gap-2 text-text-dark/60">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Cargando estado de cuenta...
+                    </div>
+                  ) : errorStatement ? (
+                    <div className="text-center py-6 text-red-600 flex items-center justify-center gap-2">
+                      <AlertCircle className="w-5 h-5" />
+                      Error al cargar el estado de cuenta.
+                    </div>
+                  ) : statementData ? (
+                    <>
+                      {/* KPI cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                        <div className="bg-gray-100 rounded-xl p-3 sm:p-4">
+                          <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-gray-500">Saldo Anterior</div>
+                          <div className="text-base sm:text-xl font-extrabold mt-1" style={{ color: '#111827' }}>
+                            ${fmtMoney(statementData.summary.initial_balance)}
+                          </div>
+                        </div>
+                        <div className="bg-red-50 rounded-xl p-3 sm:p-4">
+                          <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-red-400">Total Remitos (+)</div>
+                          <div className="text-base sm:text-xl font-extrabold mt-1 text-red-700">
+                            ${fmtMoney(statementData.summary.period_debe)}
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-xl p-3 sm:p-4">
+                          <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-green-500">Total Pagos (-)</div>
+                          <div className="text-base sm:text-xl font-extrabold mt-1 text-green-700">
+                            ${fmtMoney(statementData.summary.period_haber)}
+                          </div>
+                        </div>
+                        <div className={`rounded-xl p-3 sm:p-4 ${statementData.summary.final_balance > 0 ? 'bg-orange-50' : 'bg-green-50'}`}>
+                          <div className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${statementData.summary.final_balance > 0 ? 'text-orange-400' : 'text-green-500'}`}>Saldo al Cierre</div>
+                          <div className={`text-base sm:text-xl font-extrabold mt-1 ${statementData.summary.final_balance > 0 ? 'text-orange-700' : 'text-green-700'}`}>
+                            ${fmtMoney(statementData.summary.final_balance)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Movements table */}
+                      {(statementData.movements || []).length === 0 ? (
+                        <div className="text-center py-8 text-text-dark/50">
+                          <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                          No hay movimientos en esta semana.
+                        </div>
+                      ) : (
+                        <>
+                          <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b-2 border-gray-200">
+                                  <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Fecha</th>
+                                  <th className="text-left py-3 px-4 font-bold" style={{ color: '#111827' }}>Concepto</th>
+                                  <th className="text-right py-3 px-4 font-bold text-red-700">Debe</th>
+                                  <th className="text-right py-3 px-4 font-bold text-green-700">Haber</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {statementData.movements.map((mov, idx) => (
+                                  <tr key={`${mov.type}-${mov.id}-${idx}`} className={`border-b border-gray-100 ${mov.type === 'payment' ? 'bg-green-50/40' : mov.type === 'adjustment' ? 'bg-amber-50/40' : 'bg-red-50/30'}`}>
+                                    <td className="py-2.5 px-4 font-bold" style={{ color: '#111827' }}>
+                                      {formatDate(mov.date)}
+                                    </td>
+                                    <td className="py-2.5 px-4" style={{ color: '#6b7280' }}>
+                                      {mov.description}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-right font-extrabold text-red-700">
+                                      {mov.debe > 0 ? `$${fmtMoney(mov.debe)}` : ''}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-right font-extrabold text-green-700">
+                                      {mov.haber > 0 ? `$${fmtMoney(mov.haber)}` : ''}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="sm:hidden space-y-2">
+                            {statementData.movements.map((mov, idx) => (
+                              <div
+                                key={`${mov.type}-${mov.id}-${idx}`}
+                                className={`p-3 rounded-xl border-2 ${mov.type === 'payment' ? 'border-green-200 bg-green-50/40' : mov.type === 'adjustment' ? 'border-amber-200 bg-amber-50/40' : 'border-red-200 bg-red-50/30'}`}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="font-bold text-xs" style={{ color: '#111827' }}>
+                                      {formatDate(mov.date)}
+                                    </div>
+                                    <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                                      {mov.description}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    {mov.debe > 0 ? (
+                                      <div className="font-extrabold text-sm text-red-700">+${fmtMoney(mov.debe)}</div>
+                                    ) : (
+                                      <div className="font-extrabold text-sm text-green-700">-${fmtMoney(mov.haber)}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Share button */}
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => {
+                            const s = statementData.summary;
+                            const supplierName = suppliers?.find((s) => s.id === remitosSupplier)?.name || 'Proveedor';
+                            const lines = [
+                              `📋 *Estado de Cuenta - ${supplierName}*`,
+                              `Semana: ${formatDate(statementWeek.startDate)} al ${formatDate(statementWeek.endDate)}`,
+                              ``,
+                              `💰 Saldo Anterior: $${fmtMoney(s.initial_balance)}`,
+                              `📥 Remitos (+): $${fmtMoney(s.period_debe)}`,
+                              `📤 Pagos (-): $${fmtMoney(s.period_haber)}`,
+                              `📊 Saldo al Cierre: $${fmtMoney(s.final_balance)}`,
+                            ];
+                            navigator.clipboard.writeText(lines.join('\n')).then(
+                              () => addToast('Resumen copiado al portapapeles'),
+                              () => addToast('No se pudo copiar', 'error')
+                            );
+                          }}
+                          className="px-4 py-2 rounded-xl font-bold text-xs bg-gray-100 hover:bg-gray-200 transition flex items-center gap-2"
+                          style={{ color: '#111827' }}
+                        >
+                          <ClipboardCopy className="w-4 h-4" />
+                          Compartir Resumen
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
                 </>
               )}
             </>
