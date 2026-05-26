@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { X, Trash2, Send, Beef, ShoppingBag } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
@@ -106,13 +106,28 @@ const CartDrawer = () => {
     },
   });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/50" onClick={closeCart}></div>
+    <>
+      {/* Backdrop con fade */}
+      <div
+        className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={closeCart}
+        aria-hidden="true"
+      />
 
-      <div className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white shadow-2xl flex flex-col">
+      {/* Panel deslizante desde la derecha */}
+      <div
+        className={`fixed right-0 top-0 h-full z-50 w-full sm:w-[420px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-xl font-heading font-extrabold text-text-dark">Tu carrito</h2>
           <button
@@ -221,7 +236,7 @@ const CartDrawer = () => {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

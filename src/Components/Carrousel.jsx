@@ -1,22 +1,27 @@
-import { useCallback, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Link } from "react-scroll";
-import logo2 from "../img/foto21.webp";
-import logo3 from "../img/foto31.webp";
-import logo5 from "../img/foto5.webp";
-import logo6 from "../img/foto6.webp";
 
-const slides = [
-    { url: logo2, title: "Precios accesibles", subtitle: "Calidad garantizada, directamente a tu mesa." },
-    { url: logo5, title: "¡Pedi a Domicilio!", subtitle: "Servicio de Delivery disponible."},
-    { url: logo3, title: "¡Visítanos Hoy!", subtitle: "Conoce nuestra amplia variedad de cortes."},
-    { url: logo6, title: "Combos y Ofertas", subtitle: "Consulta por nuestras ofertas y combos."},
-];
+const API_BASE = import.meta.env.VITE_API_URL || 'https://app-granjaelsol-backend.vercel.app/api';
 
 function Carrousel() {
+    const [slides, setSlides] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const slidesRef = useRef([]);
     const carouselRef = useRef(null);
     const autoPlayRef = useRef(null);
     const isInteractingRef = useRef(false);
+
+    useEffect(() => {
+        fetch(`${API_BASE}/content/carousel`)
+            .then((r) => r.json())
+            .then((data) => {
+                slidesRef.current = data;
+                setSlides(data);
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    }, []);
 
     const getSlideWidth = useCallback(() => {
         if (!carouselRef.current) return 0;
@@ -46,11 +51,13 @@ function Carrousel() {
 
     const scroll = useCallback(
         (direction) => {
+            const count = slidesRef.current.length;
+            if (!count) return;
             const currentIndex = getCurrentIndex();
 
             let nextIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
-            if (nextIndex >= slides.length) nextIndex = 0;
-            if (nextIndex < 0) nextIndex = slides.length - 1;
+            if (nextIndex >= count) nextIndex = 0;
+            if (nextIndex < 0) nextIndex = count - 1;
 
             scrollToIndex(nextIndex);
         },
@@ -62,7 +69,7 @@ function Carrousel() {
         autoPlayRef.current = setInterval(() => {
             if (isInteractingRef.current) return;
             scroll("next");
-        }, 5000);
+        }, 10000);
     }, [scroll]);
 
     const resetAutoPlay = useCallback(() => {
@@ -70,14 +77,40 @@ function Carrousel() {
     }, [startAutoPlay]);
 
     useEffect(() => {
-        startAutoPlay();
+        if (slides.length > 0) {
+            startAutoPlay();
+        }
         return () => {
             if (autoPlayRef.current) clearInterval(autoPlayRef.current);
         };
-    }, [startAutoPlay]);
+    }, [slides, startAutoPlay]);
+
+    if (loading) {
+        return (
+            <div className="w-full h-screen pt-14 md:pt-16 relative overflow-hidden" id="carrousel">
+                <div className="w-full h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] bg-gray-800 animate-pulse flex items-center justify-center">
+                    <div className="space-y-4 text-center">
+                        <div className="h-8 w-64 bg-gray-600 rounded-xl mx-auto animate-pulse" />
+                        <div className="h-1 w-24 bg-gray-600 rounded-full mx-auto" />
+                        <div className="h-5 w-48 bg-gray-600 rounded-lg mx-auto animate-pulse" />
+                    </div>
+                </div>
+                <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary" />
+            </div>
+        );
+    }
+
+    if (slides.length === 0) {
+        return (
+            <div className="w-full h-screen pt-14 md:pt-16 relative overflow-hidden" id="carrousel">
+                <div className="w-full h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] bg-gray-900 flex items-center justify-center" />
+                <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary" />
+            </div>
+        );
+    }
 
     return (
-        <div className="w-full h-screen pt-14 md:pt-16 relative overflow-hidden" id="carrousel">
+        <div className="w-full h-screen pt-0.5 md:pt-16 relative overflow-hidden" id="carrousel">
             {/* Contenedor principal del carrusel */}
             <div className="relative group">
                 {/* Carrusel con scroll horizontal */}
@@ -99,14 +132,14 @@ function Carrousel() {
                 >
                     {slides.map((slide, index) => (
                         <div
-                            key={index}
+                            key={slide.id ?? index}
                             className="w-full h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex-shrink-0 snap-center relative overflow-hidden"
                         >
-                            {/* Imagen de fondo estática (sin zoom) */}
+                            {/* Imagen de fondo dinámica desde base de datos */}
                             <div className="absolute inset-0">
                                 <img
-                                    src={slide.url}
-                                    alt={slide.title}
+                                    src={slide.image_url}
+                                    alt={slide.alt_text || slide.title || ''}
                                     className="w-full h-full object-cover"
                                     style={{ willChange: 'auto' }}
                                     loading={index === 0 ? 'eager' : 'lazy'}
@@ -116,25 +149,6 @@ function Carrousel() {
                                 />
                             </div>
 
-                            {/* Overlay gradiente - decorativo, sin interacción */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60 pointer-events-none"></div>
-
-                            {/* Contenido con animación */}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 md:p-8">
-                                {/* Título */}
-                                <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-extrabold text-text-light mb-4 drop-shadow-2xl leading-tight max-w-4xl pointer-events-none select-none">
-                                    {slide.title}
-                                </h1>
-
-                                {/* Línea decorativa */}
-                                <div className="w-24 h-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-full mb-6 pointer-events-none"></div>
-
-                                {/* Subtítulo */}
-                                <p className="text-lg md:text-2xl lg:text-3xl font-body text-text-light drop-shadow-lg max-w-3xl pointer-events-none select-none">
-                                    {slide.subtitle}
-                                </p>
-                            </div>
-
                             {/* Indicador de slide - decorativo */}
                             <div className="absolute bottom-6 right-6 bg-black/50 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm pointer-events-none select-none">
                                 {index + 1} / {slides.length}
@@ -142,25 +156,6 @@ function Carrousel() {
                         </div>
                     ))}
                 </div>
-
-                {/* Botón Anterior */}
-                <button
-                    onClick={() => scroll("prev")}
-                    className="hidden md:flex absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 z-20 bg-white/90 hover:bg-primary text-primary hover:text-white p-3 md:p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 backdrop-blur-sm group-hover:opacity-100 opacity-0 md:opacity-100"
-                    aria-label="Anterior"
-                >
-                    <ChevronLeft size={28} />
-                </button>
-
-                {/* Botón Siguiente */}
-                <button
-                    onClick={() => scroll("next")}
-                    className="hidden md:flex absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 z-20 bg-white/90 hover:bg-primary text-primary hover:text-white p-3 md:p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 backdrop-blur-sm group-hover:opacity-100 opacity-0 md:opacity-100"
-                    aria-label="Siguiente"
-                >
-                    <ChevronRight size={28} />
-                </button>
-
                 {/* Indicadores de progreso - decorativos, sin interacción */}
                 <div className="absolute bottom-6 left-6 flex gap-2 z-20 pointer-events-none select-none">
                     {slides.map((_, index) => (

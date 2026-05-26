@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Menu, X, Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
+import { X, Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
 import logo from "../img/logoo.webp"
 import { CONTACT_INFO } from '../constants/contactInfo';
 import { scrollToSection } from '../utils/scrollUtils';
@@ -23,9 +23,16 @@ function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const toggleMenu = () => {
-        setMenuOpen(!menuOpen);
-    };
+    const toggleMenu = () => setMenuOpen((prev) => !prev);
+
+    useEffect(() => {
+        if (menuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [menuOpen]);
 
     // Componente de enlace de navegación adaptado para el scroll simulado
     const NavLink = ({ to, children }) => (
@@ -68,7 +75,7 @@ function Navbar() {
                     </div>
                 </div>
 
-                <div className="md:hidden flex items-center gap-2"> {/* Mostrar solo en dispositivos móviles */}
+                <div className="md:hidden flex items-center gap-2">
                     <button
                         onClick={openCart}
                         className="relative text-text-dark focus:outline-none w-11 h-11 flex items-center justify-center"
@@ -83,58 +90,27 @@ function Navbar() {
                         )}
                     </button>
 
-                    {/* Ícono de menú */}
+                    {/* Ícono hamburguesa animado → X */}
                     <button
                         className="text-text-dark focus:outline-none w-11 h-11 flex items-center justify-center"
                         onClick={toggleMenu}
-                        aria-label="Abrir menú"
+                        aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
                         type="button"
                     >
-                        {menuOpen ? (
-                            <X className="h-6 w-6" />
-                        ) : (
-                            <Menu className="h-6 w-6" />
-                        )}
+                        <div className="relative w-6 h-5 flex flex-col justify-between">
+                            <span className={`block w-full h-0.5 bg-current origin-center transition-all duration-300 ease-in-out ${menuOpen ? 'rotate-45 translate-y-[9px]' : ''}`} />
+                            <span className={`block w-full h-0.5 bg-current transition-all duration-300 ease-in-out ${menuOpen ? 'opacity-0 scale-x-0' : ''}`} />
+                            <span className={`block w-full h-0.5 bg-current origin-center transition-all duration-300 ease-in-out ${menuOpen ? '-rotate-45 -translate-y-[9px]' : ''}`} />
+                        </div>
                     </button>
                 </div>
 
-                {/* Menú de navegación */}
-                <ul className={`md:flex ${menuOpen ? 'flex flex-col absolute top-full left-0 w-full bg-base shadow-lg p-3 border-t border-gray-200' : 'hidden'} md:space-x-6 md:mt-0 items-center justify-center`}>
-                    <li>
-                        <NavLink to="carrousel">Inicio</NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="about">Quienes Somos</NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="productos">Productos</NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="contactos">Contáctanos</NavLink>
-                    </li>
-                    
-                    {/* Redes sociales en menú móvil */}
-                    {menuOpen && (
-                        <li className="md:hidden border-t border-gray-200 pt-3 mt-3 w-full">
-                            <div className="flex items-center justify-center space-x-6">
-                                <a href={CONTACT_INFO.instagramUrlAlt} target="_blank" rel="noopener noreferrer" 
-                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125"
-                                   aria-label="Instagram">
-                                    <Instagram className="h-5 w-5" />
-                                </a>
-                                <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" 
-                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125"
-                                   aria-label="Facebook">
-                                    <Facebook className="h-5 w-5" />
-                                </a>
-                                <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" 
-                                   className="text-text-dark hover:text-primary transition duration-300 transform hover:scale-125"
-                                   aria-label="WhatsApp">
-                                    <Send className="h-5 w-5" /> 
-                                </a>
-                            </div>
-                        </li>
-                    )}
+                {/* Menú desktop (horizontal) */}
+                <ul className="hidden md:flex md:space-x-6 md:mt-0 items-center justify-center">
+                    <li><NavLink to="carrousel">Inicio</NavLink></li>
+                    <li><NavLink to="about">Quienes Somos</NavLink></li>
+                    <li><NavLink to="productos">Productos</NavLink></li>
+                    <li><NavLink to="contactos">Contáctanos</NavLink></li>
                 </ul>
                 
                 {/* Íconos de redes sociales */}
@@ -178,6 +154,78 @@ function Navbar() {
                 className="fixed top-0 left-0 h-1 bg-gradient-to-r from-primary to-secondary z-50 transition-all duration-300"
                 style={{ width: `${scrollProgress}%` }}
             ></div>
+
+            {/* ── Mobile Drawer ── */}
+            {/* Backdrop con fade */}
+            <div
+                className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ease-in-out ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setMenuOpen(false)}
+                aria-hidden="true"
+            >
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            </div>
+
+            {/* Panel deslizante */}
+            <div
+                className={`fixed top-0 left-0 h-full w-72 max-w-[80vw] bg-base z-50 md:hidden shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                aria-label="Menú de navegación"
+            >
+                {/* Header del drawer */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                    <div className="flex items-center gap-2">
+                        <img src={logo} alt="Logo" className="h-9 w-9 rounded-sm" />
+                        <span className="text-text-dark font-extrabold text-base">Granja el Sol</span>
+                    </div>
+                    <button
+                        onClick={() => setMenuOpen(false)}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-text-dark"
+                        aria-label="Cerrar menú"
+                        type="button"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                {/* Ítems de navegación */}
+                <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+                    {[
+                        { to: 'carrousel', label: 'Inicio' },
+                        { to: 'about', label: 'Quiénes Somos' },
+                        { to: 'productos', label: 'Productos' },
+                        { to: 'contactos', label: 'Contáctanos' },
+                    ].map(({ to, label }) => (
+                        <div
+                            key={to}
+                            onClick={() => { scrollToSection(to); setMenuOpen(false); }}
+                            className="flex items-center px-4 py-3 rounded-xl text-text-dark font-semibold text-base hover:bg-primary/10 hover:text-primary transition-all duration-200 cursor-pointer"
+                        >
+                            {label}
+                        </div>
+                    ))}
+                </nav>
+
+                {/* Redes sociales */}
+                <div className="px-5 py-5 border-t border-gray-200">
+                    <p className="text-xs text-text-dark/50 font-semibold uppercase tracking-wider mb-3">Seguinos</p>
+                    <div className="flex items-center gap-4">
+                        <a href={CONTACT_INFO.instagramUrlAlt} target="_blank" rel="noopener noreferrer"
+                            className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-text-dark hover:bg-primary hover:text-white transition-all duration-200"
+                            aria-label="Instagram">
+                            <Instagram className="h-5 w-5" />
+                        </a>
+                        <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer"
+                            className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-text-dark hover:bg-primary hover:text-white transition-all duration-200"
+                            aria-label="Facebook">
+                            <Facebook className="h-5 w-5" />
+                        </a>
+                        <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer"
+                            className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-text-dark hover:bg-primary hover:text-white transition-all duration-200"
+                            aria-label="WhatsApp">
+                            <Send className="h-5 w-5" />
+                        </a>
+                    </div>
+                </div>
+            </div>
         </>
     );
 }
