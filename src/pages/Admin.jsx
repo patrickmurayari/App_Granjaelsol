@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, Loader2, AlertCircle, CheckCircle
+  Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, TrendingUp, Loader2, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 import ProductsManager from '../Components/Admin/ProductsManager';
@@ -11,8 +11,9 @@ import CreateProduct from '../Components/Admin/CreateProduct';
 import CashClosing from '../Components/Admin/CashClosing';
 import InventoryManager from '../Components/Admin/InventoryManager';
 import RemitosHistory from '../Components/Admin/RemitosHistory';
+import FinanceManager from '../Components/Admin/FinanceManager';
 
-const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos'];
+const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos', 'Finanzas'];
 
 const TAB_ICONS = {
   'Productos': Package,
@@ -21,6 +22,7 @@ const TAB_ICONS = {
   'Cierre de Caja': Plus,
   'Inventario': Truck,
   'Remitos': FileText,
+  'Finanzas': TrendingUp,
 };
 
 const Admin = () => {
@@ -66,6 +68,7 @@ const Admin = () => {
       case 'Cierre de Caja': return <CashClosing />;
       case 'Inventario': return <InventoryManager addToast={addToast} />;
       case 'Remitos': return <RemitosHistory addToast={addToast} />;
+      case 'Finanzas': return <FinanceManager addToast={addToast} />;
       default: return null;
     }
   };
