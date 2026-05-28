@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { X, Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
+import {Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
 import logo from "../img/logoo.webp"
 import { CONTACT_INFO } from '../constants/contactInfo';
 import { scrollToSection } from '../utils/scrollUtils';
