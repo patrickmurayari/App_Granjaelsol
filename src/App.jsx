@@ -2,16 +2,14 @@ import { useEffect } from 'react';
 import ReactGA from 'react-ga4';
 import { Route, Routes } from 'react-router-dom';
 import Navbar from './Components/Navbar';
-import Carrousel from './Components/Carrousel'
-import About from './Components/About'
+import HeroSection from './Components/HeroSection'
 import Productos from './Components/Productos'
 import Footer from './Components/Footer'
-import Contactos from './Components/Contactos'
 
-import Testimonios from './Components/Testimonios'
 import ProductosAdicionales from './Components/ProductosAdicionales'
 import MetodosPago from './Components/MetodosPago'
 import Admin from './pages/Admin';
+import QuienesSomos from './pages/QuienesSomos';
 import Login from './pages/Login';
 import CartDrawer from './Components/CartDrawer';
 import { AuthProvider } from './context/AuthContext';
@@ -31,17 +29,15 @@ const App = () => {
                     element={
                         <div>
                             <Navbar />
-                            <Carrousel />
+                            <HeroSection />
                             <Productos />
                             <ProductosAdicionales />
-                            <Testimonios />
-                            <About />
-                            <Contactos />
                             <MetodosPago />
                             <Footer />
                         </div>
                     }
                 />
+                <Route path="/quienessomos" element={<QuienesSomos />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin" element={<Admin />} />
             </Routes>

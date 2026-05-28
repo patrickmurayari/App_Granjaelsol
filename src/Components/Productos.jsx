@@ -19,6 +19,7 @@ function Productos() {
     // Estado para manejar la pestaña activa (Vacunos, Cerdo, Pollos)
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [visibleCount, setVisibleCount] = useState(8);
     
     const {
         data: productos,
@@ -59,7 +60,7 @@ function Productos() {
     }
 
     return (
-        <div className="md:mt-28 bg-gradient-to-b from-white to-gray-50 px-2 sm:px-4 md:px-8 py-12 sm:py-16" id="productos">
+        <div className="bg-gradient-to-b from-white to-gray-50 px-2 sm:px-4 md:px-8 pt-10 sm:pt-14 pb-12 sm:pb-16" id="productos">
             <div className="text-center mb-8 sm:mb-12">
                 <h2 className="text-center text-3xl sm:text-4xl md:text-5xl font-heading font-extrabold mb-3 sm:mb-4 text-text-dark">
                     Nuestros Productos
@@ -77,12 +78,12 @@ function Productos() {
                         type="text"
                         placeholder="Buscar producto..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => { setSearchTerm(e.target.value); setVisibleCount(8); }}
                         className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 md:py-4 rounded-xl sm:rounded-2xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition shadow-md hover:shadow-lg font-body text-sm sm:text-base"
                     />
                     {searchTerm && (
                         <button
-                            onClick={() => setSearchTerm("")}
+                            onClick={() => { setSearchTerm(""); setVisibleCount(8); }}
                             className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
                             aria-label="Limpiar búsqueda"
                         >
@@ -101,6 +102,7 @@ function Productos() {
                             onClick={() => {
                                 setActiveCategory(category);
                                 setSearchTerm("");
+                                setVisibleCount(8);
                             }}
                             className={`
                                 py-1.5 sm:py-2 md:py-3 px-4 sm:px-6 md:px-10 rounded-lg sm:rounded-xl text-sm sm:text-base md:text-lg font-heading font-bold transition-all duration-300 whitespace-nowrap transform hover:scale-105 relative overflow-hidden
@@ -128,9 +130,19 @@ function Productos() {
             ) : productsToShow.length > 0 ? (
                 <>
                     <div className="text-center mb-3 sm:mb-4 text-xs sm:text-sm text-text-dark/60">
-                        Mostrando {productsToShow.length} producto{productsToShow.length !== 1 ? 's' : ''}
+                        Mostrando {Math.min(visibleCount, productsToShow.length)} de {productsToShow.length} producto{productsToShow.length !== 1 ? 's' : ''}
                     </div>
-                    <CardProducts products={productsToShow} />
+                    <CardProducts products={productsToShow.slice(0, visibleCount)} />
+                    {productsToShow.length > visibleCount && (
+                        <div className="flex justify-center mt-8 sm:mt-10">
+                            <button
+                                onClick={() => setVisibleCount((prev) => prev + 8)}
+                                className="flex items-center gap-2 px-8 py-3 rounded-2xl border-2 border-primary text-primary md:text-primary font-bold text-sm sm:text-base hover:bg-primary hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                            >
+                                Mostrar más productos
+                            </button>
+                        </div>
+                    )}
                 </>
             ) : (
                 <div className="text-center py-8 sm:py-10 text-lg sm:text-xl text-secondary font-heading px-4">

@@ -13,9 +13,8 @@ function MetodosPago() {
     ];
 
     return (
-        <section className="bg-base">
+        <section className="bg-white">
             <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-                <div className="border-t border-b border-gray-200 py-8">
                     <h2 className="text-text-dark font-heading font-extrabold text-xl md:text-2xl mb-4">
                         Métodos de pago
                     </h2>
@@ -43,7 +42,6 @@ function MetodosPago() {
                             </div>
                         ))}
                     </div>
-                </div>
             </div>
         </section>
     );

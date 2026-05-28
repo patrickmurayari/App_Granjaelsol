@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { X, Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
 import logo from "../img/logoo.webp"
@@ -10,13 +11,17 @@ function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrollProgress, setScrollProgress] = useState(0);
     const { count, openCart } = useCart();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
+            setScrolled(scrollTop > 50);
             const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const scrolled = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-            setScrollProgress(scrolled);
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            setScrollProgress(progress);
         };
 
         window.addEventListener('scroll', handleScroll);
@@ -24,6 +29,9 @@ function Navbar() {
     }, []);
 
     const toggleMenu = () => setMenuOpen((prev) => !prev);
+
+    const isTransparent = location.pathname === '/' && !scrolled;
+    const navTextClass = isTransparent ? 'text-white' : 'text-text-dark';
 
     useEffect(() => {
         if (menuOpen) {
@@ -56,7 +64,7 @@ function Navbar() {
     return (
         // Aplicamos bg-base y font-heading con sombra mejorada
         <>
-            <nav className={`bg-base py-2 px-4 md:px-8 fixed top-0 left-0 w-full z-50 font-heading shadow-md transition-shadow duration-300 ${menuOpen ? 'shadow-lg' : 'md:shadow-md'}`}>
+            <nav className={`${isTransparent ? 'bg-transparent' : 'bg-base shadow-md'} py-2 px-4 md:px-8 fixed top-0 left-0 w-full z-50 font-heading transition-all duration-300`}>
             <div className="flex items-center justify-between max-w-7xl mx-auto">
                 <div className="flex items-center">
                     {/* Placeholder para el Logo (simulando el Link y la imagen) */}
@@ -65,12 +73,9 @@ function Navbar() {
                         className="cursor-pointer flex items-center"
                     >
                         {/* Sustituimos la imagen por un placeholder visualmente agradable con bg-secondary */}
-                        <div className="h-10 w-10 md:h-12 md:w-12 mr-2 rounded-lg flex items-center justify-center text-text-light text-2xl font-black object-cover">
-                            <img src={logo} alt="Logo" className="h-10 w-10 md:h-12 md:w-12 rounded-sm" />
-                        </div>
                         {/* Color del texto principal actualizado a text-text-dark */}
                         <div className="flex items-center gap-2">
-                            <span className="text-text-dark font-extrabold text-base md:text-lg">Granja el Sol</span>
+                            <span className={`font-extrabold text-2xl md:text-2xl transition-colors duration-300 ${navTextClass}`}>Granja el Sol</span>
                         </div>
                     </div>
                 </div>
@@ -78,7 +83,7 @@ function Navbar() {
                 <div className="md:hidden flex items-center gap-2">
                     <button
                         onClick={openCart}
-                        className="relative text-text-dark focus:outline-none w-11 h-11 flex items-center justify-center"
+                        className={`relative focus:outline-none w-11 h-11 flex items-center justify-center transition-colors duration-300 ${navTextClass}`}
                         aria-label="Abrir carrito"
                         type="button"
                     >
@@ -92,7 +97,7 @@ function Navbar() {
 
                     {/* Ícono hamburguesa animado → X */}
                     <button
-                        className="text-text-dark focus:outline-none w-11 h-11 flex items-center justify-center"
+                        className={`focus:outline-none w-11 h-11 flex items-center justify-center transition-colors duration-300 ${navTextClass}`}
                         onClick={toggleMenu}
                         aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
                         type="button"
@@ -104,21 +109,13 @@ function Navbar() {
                         </div>
                     </button>
                 </div>
-
-                {/* Menú desktop (horizontal) */}
-                <ul className="hidden md:flex md:space-x-6 md:mt-0 items-center justify-center">
-                    <li><NavLink to="carrousel">Inicio</NavLink></li>
-                    <li><NavLink to="about">Quienes Somos</NavLink></li>
-                    <li><NavLink to="productos">Productos</NavLink></li>
-                    <li><NavLink to="contactos">Contáctanos</NavLink></li>
-                </ul>
                 
                 {/* Íconos de redes sociales */}
                 <div className="hidden md:block">
                     <div className="flex items-center space-x-3">
                         <button
                             onClick={openCart}
-                            className="relative text-text-dark hover:text-primary transition duration-300"
+                            className={`relative hover:text-primary transition-colors duration-300 ${navTextClass}`}
                             aria-label="Abrir carrito"
                         >
                             <ShoppingCart className="h-5 w-5" />
@@ -129,18 +126,8 @@ function Navbar() {
                             )}
                         </button>
                         {/* Sustitución de imágenes por íconos Lucide, usando hover:text-primary */}
-                        <a href={CONTACT_INFO.instagramUrl} target="_blank" rel="noopener noreferrer" 
-                        className="text-text-dark hover:text-primary transition duration-300"
-                        aria-label="Instagram">
-                            <Instagram className="h-5 w-5" />
-                        </a>
-                        <a href={CONTACT_INFO.facebookUrl} target="_blank" rel="noopener noreferrer" 
-                        className="text-text-dark hover:text-primary transition duration-300"
-                        aria-label="Facebook">
-                            <Facebook className="h-5 w-5" />
-                        </a>
                         <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" 
-                        className="text-text-dark hover:text-primary transition duration-300"
+                        className={`hover:text-primary transition-colors duration-300 ${navTextClass}`}
                         aria-label="WhatsApp">
                             <Send className="h-5 w-5" /> 
                         </a>
@@ -176,27 +163,18 @@ function Navbar() {
                         <img src={logo} alt="Logo" className="h-9 w-9 rounded-sm" />
                         <span className="text-text-dark font-extrabold text-base">Granja el Sol</span>
                     </div>
-                    <button
-                        onClick={() => setMenuOpen(false)}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-text-dark"
-                        aria-label="Cerrar menú"
-                        type="button"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
                 </div>
 
                 {/* Ítems de navegación */}
                 <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
                     {[
-                        { to: 'carrousel', label: 'Inicio' },
-                        { to: 'about', label: 'Quiénes Somos' },
-                        { to: 'productos', label: 'Productos' },
-                        { to: 'contactos', label: 'Contáctanos' },
-                    ].map(({ to, label }) => (
+                        { key: 'carrousel', label: 'Inicio',        action: () => scrollToSection('carrousel') },
+                        { key: 'quienessomos', label: 'Quiénes Somos', action: () => navigate('/quienessomos') },
+                        { key: 'productos',  label: 'Productos',     action: () => scrollToSection('productos') },
+                    ].map(({ key, label, action }) => (
                         <div
-                            key={to}
-                            onClick={() => { scrollToSection(to); setMenuOpen(false); }}
+                            key={key}
+                            onClick={() => { action(); setMenuOpen(false); }}
                             className="flex items-center px-4 py-3 rounded-xl text-text-dark font-semibold text-base hover:bg-primary/10 hover:text-primary transition-all duration-200 cursor-pointer"
                         >
                             {label}
