@@ -74,7 +74,7 @@ const Admin = () => {
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'Productos': return <ProductsManager />;
+      case 'Productos': return <ProductsManager addToast={addToast} />;
       case 'Pedidos': return <OrdersManager />;
       case 'Crear Producto': return <CreateProduct />;
       case 'Cierre de Caja': return <CashClosing />;

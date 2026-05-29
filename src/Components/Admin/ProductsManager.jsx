@@ -1,19 +1,23 @@
 import { useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
 import {
-  Search, X, ToggleLeft, ToggleRight, Loader2, AlertCircle
+  Search, X, ToggleLeft, ToggleRight, Loader2, AlertCircle, Trash2,
 } from 'lucide-react';
 
 const ADMIN_CATEGORIES = ['Todas', 'Carnes', 'Cerdo', 'Pollos', 'Achuras', 'Bebidas', 'Snacks', 'Almacén', 'Salsas'];
 
-const ProductsManager = () => {
+const EMPTY_EDIT = { nombre: '', precio: '', categoria: '', es_unidad: false, peso_promedio_unidad: '' };
+
+const ProductsManager = ({ addToast }) => {
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [searchProd, setSearchProd] = useState('');
   const [editing, setEditing] = useState(null);
-  const [precio, setPrecio] = useState('');
+  const [editForm, setEditForm] = useState(EMPTY_EDIT);
   const [togglingId, setTogglingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const {
     data: productos,
@@ -46,7 +50,22 @@ const ProductsManager = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['productos'] });
       setEditing(null);
-      setPrecio('');
+      setEditForm(EMPTY_EDIT);
+      addToast?.('Producto actualizado correctamente');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/productos/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['productos'] });
+      setConfirmDelete(null);
+      addToast?.('Producto eliminado correctamente');
+    },
+    onError: () => {
+      addToast?.('Error al eliminar el producto', 'error');
     },
   });
 
@@ -69,15 +88,29 @@ const ProductsManager = () => {
 
   const openEdit = (p) => {
     setEditing(p);
-    setPrecio(p?.precio ?? '');
+    setEditForm({
+      nombre: p.nombre || '',
+      precio: p.precio ?? '',
+      categoria: p.categoria || '',
+      es_unidad: p.es_unidad || false,
+      peso_promedio_unidad: p.peso_promedio_unidad ?? '',
+    });
   };
+
+  const set = (field, value) => setEditForm((prev) => ({ ...prev, [field]: value }));
 
   const submitEdit = (e) => {
     e.preventDefault();
     if (!editing) return;
     updateMutation.mutate({
       id: editing.id,
-      payload: { precio: precio === '' ? null : Number(precio) },
+      payload: {
+        nombre: editForm.nombre.trim() || undefined,
+        precio: editForm.precio === '' ? null : Number(editForm.precio),
+        categoria: editForm.categoria || undefined,
+        es_unidad: editForm.es_unidad,
+        peso_promedio_unidad: editForm.peso_promedio_unidad === '' ? null : Number(editForm.peso_promedio_unidad),
+      },
     });
   };
 
@@ -148,6 +181,7 @@ const ProductsManager = () => {
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Categoría</th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Precio</th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Tipo</th>
+                <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden md:table-cell">Peso Prom.</th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Stock</th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
               </tr>
@@ -173,6 +207,9 @@ const ProductsManager = () => {
                         {p.es_unidad ? 'Unidad' : 'Peso'}
                       </span>
                     </td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/70 hidden md:table-cell">
+                      {p.peso_promedio_unidad > 0 ? `${Number(p.peso_promedio_unidad).toFixed(3)} kg` : '—'}
+                    </td>
                     <td className="px-3 sm:px-4 py-2 sm:py-3">
                       <button
                         onClick={() => handleToggleDisponible(p)}
@@ -195,12 +232,21 @@ const ProductsManager = () => {
                       </button>
                     </td>
                     <td className="px-3 sm:px-4 py-2 sm:py-3">
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="bg-primary text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-secondary transition text-xs sm:text-sm"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="bg-primary text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold hover:bg-secondary transition text-xs sm:text-sm"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(p)}
+                          className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition"
+                          title="Eliminar producto"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -211,53 +257,197 @@ const ProductsManager = () => {
       </div>
       )}
 
+      {/* Modal de confirmación de eliminación */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:px-4">
+          <div className="w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-5 pt-6 pb-2 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h2 className="text-base font-heading font-extrabold text-text-dark">
+                ¿Eliminar producto?
+              </h2>
+              <p className="text-sm text-text-dark/60">
+                Vas a eliminar permanentemente{' '}
+                <strong className="text-text-dark">{confirmDelete.nombre}</strong>.
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-3 px-5 py-5">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteMutation.mutate(confirmDelete.id)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleteMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Eliminando...</>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Eliminar</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de edición */}
       {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-            <div className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h2 className="text-lg sm:text-xl font-heading font-extrabold text-text-dark">Editar precio</h2>
-                <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:px-4">
+          <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <p className="text-[10px] text-text-dark/40 font-semibold uppercase tracking-wider">ID #{editing.id}</p>
+                <h2 className="text-base font-heading font-extrabold text-text-dark">Editar Producto</h2>
               </div>
-              <p className="text-sm text-text-dark/70 mb-4">
-                {editing.nombre} — Precio actual: <strong>${editing.precio ?? '—'}</strong>
-              </p>
-              <form onSubmit={submitEdit}>
+              <button
+                onClick={() => setEditing(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-dark/40 hover:text-text-dark hover:bg-gray-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={submitEdit} className="px-5 py-5 space-y-4 overflow-y-auto max-h-[72vh]">
+
+              {/* Nombre */}
+              <div>
+                <label className="block text-xs font-bold text-text-dark mb-1.5">Nombre *</label>
+                <input
+                  type="text"
+                  value={editForm.nombre}
+                  onChange={(e) => set('nombre', e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  placeholder="Nombre del producto"
+                />
+              </div>
+
+              {/* Precio */}
+              <div>
+                <label className="block text-xs font-bold text-text-dark mb-1.5">Precio ($)</label>
                 <input
                   type="number"
                   inputMode="decimal"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  className="w-full px-4 py-3 text-lg font-bold text-center rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition mb-4"
-                  placeholder="Nuevo precio"
-                  autoFocus
+                  step="0.01"
+                  value={editForm.precio}
+                  onChange={(e) => set('precio', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  placeholder="Ej: 2500"
                 />
-                <div className="flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(null)}
-                    className="px-4 py-2 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={updateMutation.isPending}
-                    className="bg-primary text-white px-3 sm:px-4 py-2 rounded-xl font-bold hover:bg-secondary transition disabled:opacity-60 text-sm"
-                  >
-                    {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
-                  </button>
+              </div>
+
+              {/* Categoría */}
+              <div>
+                <label className="block text-xs font-bold text-text-dark mb-1.5">Categoría</label>
+                <select
+                  value={editForm.categoria}
+                  onChange={(e) => set('categoria', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm bg-white"
+                >
+                  <option value="">Seleccionar...</option>
+                  <optgroup label="Carnicería">
+                    <option value="Carnes">Carnes (Vacunos)</option>
+                    <option value="Cerdo">Cerdo</option>
+                    <option value="Pollos">Pollos</option>
+                    <option value="Achuras">Achuras</option>
+                  </optgroup>
+                  <optgroup label="Almacén y Adicionales">
+                    <option value="Bebidas">Bebidas</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Almacén">Almacén</option>
+                    <option value="Salsas">Salsas</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              {/* ¿Venta por unidad? */}
+              <div className="flex items-center justify-between py-1">
+                <label className="text-xs font-bold text-text-dark">¿Venta por unidad?</label>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={editForm.es_unidad}
+                  onClick={() => set('es_unidad', !editForm.es_unidad)}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+                    editForm.es_unidad ? 'bg-primary' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                      editForm.es_unidad ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Peso promedio — solo si es_unidad */}
+              {editForm.es_unidad && (
+                <div>
+                  <label className="block text-xs font-bold text-text-dark mb-1.5">
+                    Peso promedio por unidad (kg)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.001"
+                    value={editForm.peso_promedio_unidad}
+                    onChange={(e) => set('peso_promedio_unidad', e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                    placeholder="Ej: 0.250"
+                  />
                 </div>
-              </form>
-            </div>
+              )}
+
+              {/* Error */}
+              {updateMutation.isError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  Error al guardar. Intentá nuevamente.
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1 pb-1">
+                <button
+                  type="button"
+                  onClick={() => setEditing(null)}
+                  className="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-secondary transition disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {updateMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                  ) : 'Guardar cambios'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
     </>
   );
+};
+
+ProductsManager.propTypes = {
+  addToast: PropTypes.func,
 };
 
 export default ProductsManager;

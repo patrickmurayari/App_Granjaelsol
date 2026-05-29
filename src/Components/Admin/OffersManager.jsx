@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ImagePlus, Loader2, AlertCircle, Tag } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ImagePlus, Loader2, AlertCircle, Tag, Trash2 } from 'lucide-react';
 import api from '../../api/api';
 
 const CATEGORIES = ['Vacunos', 'Cerdo', 'Pollos', 'Achuras', 'Bebidas', 'Snacks', 'Almacén', 'Salsas'];
@@ -13,8 +13,38 @@ const OffersManager = ({ addToast }) => {
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
+
+  const deleteOneMutation = useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/finance/offers/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-offers'] });
+      setConfirmDeleteId(null);
+      addToast?.('Oferta eliminada correctamente');
+    },
+    onError: () => {
+      addToast?.('Error al eliminar la oferta', 'error');
+    },
+  });
+
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete('/finance/offers');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-offers'] });
+      setConfirmDeleteAll(false);
+      addToast?.('Todas las ofertas eliminadas');
+    },
+    onError: () => {
+      addToast?.('Error al eliminar las ofertas', 'error');
+    },
+  });
 
   const { data: offers, isLoading } = useQuery({
     queryKey: ['store-offers'],
@@ -203,9 +233,18 @@ const OffersManager = ({ addToast }) => {
           <Tag className="w-5 h-5 text-orange-500" />
           <h3 className="font-extrabold text-text-dark text-sm sm:text-base">Ofertas activas</h3>
           {offers && offers.length > 0 && (
-            <span className="ml-auto text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">
-              {offers.length}
-            </span>
+            <>
+              <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">
+                {offers.length}
+              </span>
+              <button
+                onClick={() => setConfirmDeleteAll(true)}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Borrar todas
+              </button>
+            </>
           )}
         </div>
 
@@ -242,11 +281,103 @@ const OffersManager = ({ addToast }) => {
                     </span>
                   </div>
                 )}
+                <button
+                  onClick={() => setConfirmDeleteId(offer)}
+                  className="absolute top-1.5 left-1.5 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition shadow-sm"
+                  title="Eliminar oferta"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+      {/* Confirm delete single */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:px-4">
+          <div className="w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-5 pt-6 pb-2 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h2 className="text-base font-heading font-extrabold text-text-dark">¿Eliminar oferta?</h2>
+              <p className="text-sm text-text-dark/60">
+                {confirmDeleteId.title ? (
+                  <>Vas a eliminar <strong className="text-text-dark">{confirmDeleteId.title}</strong> y su imagen del storage.</>
+                ) : (
+                  'Vas a eliminar esta oferta y su imagen del storage de forma permanente.'
+                )}
+              </p>
+            </div>
+            <div className="flex gap-3 px-5 py-5">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={deleteOneMutation.isPending}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-red-300 transition disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteOneMutation.mutate(confirmDeleteId.id)}
+                disabled={deleteOneMutation.isPending}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleteOneMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Eliminando...</>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Eliminar</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm delete all */}
+      {confirmDeleteAll && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:px-4">
+          <div className="w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-5 pt-6 pb-2 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h2 className="text-base font-heading font-extrabold text-text-dark">¿Borrar todas las ofertas?</h2>
+              <p className="text-sm text-text-dark/60">
+                Vas a eliminar permanentemente las{' '}
+                <strong className="text-text-dark">
+                  {offers?.length ?? 0} oferta{offers?.length !== 1 ? 's' : ''}
+                </strong>{' '}
+                actuales y sus imágenes del storage. Esta acción no se puede deshacer y limpiará la pantalla de los clientes.
+              </p>
+            </div>
+            <div className="flex gap-3 px-5 py-5">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteAll(false)}
+                disabled={deleteAllMutation.isPending}
+                className="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-red-300 transition disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteAllMutation.mutate()}
+                disabled={deleteAllMutation.isPending}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleteAllMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Borrando...</>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Borrar todas</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,44 +1,61 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
 import {
-  Plus, Loader2, AlertCircle, CheckCircle
+  Plus, Loader2, AlertCircle, CheckCircle, ImagePlus,
 } from 'lucide-react';
+
+const EMPTY_FORM = {
+  nombre: '',
+  precio: '',
+  categoria: '',
+  peso_promedio_unidad: '',
+  descripcion: '',
+  es_unidad: false,
+};
 
 const CreateProduct = () => {
   const queryClient = useQueryClient();
-  const [newProduct, setNewProduct] = useState({
-    nombre: '',
-    precio: '',
-    categoria: '',
-    peso_promedio_unidad: '',
-    descripcion: '',
-    imagen_url: '',
-    es_unidad: false,
-  });
+  const fileInputRef = useRef(null);
+  const [newProduct, setNewProduct] = useState(EMPTY_FORM);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const createProductMutation = useMutation({
-    mutationFn: async (payload) => {
-      const { data } = await api.post('/productos', payload);
+    mutationFn: async (formData) => {
+      const { data } = await api.post('/productos', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return data;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['productos'] });
-      setNewProduct({
-        nombre: '',
-        precio: '',
-        categoria: '',
-        peso_promedio_unidad: '',
-        descripcion: '',
-        imagen_url: '',
-        es_unidad: false,
-      });
+      setNewProduct(EMPTY_FORM);
+      setImageFile(null);
+      if (imagePreview) { URL.revokeObjectURL(imagePreview); setImagePreview(null); }
     },
   });
 
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setImageFile(f);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(URL.createObjectURL(f));
+    e.target.value = '';
+  };
+
   const submitNewProduct = (e) => {
     e.preventDefault();
-    createProductMutation.mutate(newProduct);
+    const formData = new FormData();
+    formData.append('nombre', newProduct.nombre);
+    if (newProduct.precio) formData.append('precio', newProduct.precio);
+    if (newProduct.categoria) formData.append('categoria', newProduct.categoria);
+    if (newProduct.peso_promedio_unidad) formData.append('peso_promedio_unidad', newProduct.peso_promedio_unidad);
+    if (newProduct.descripcion) formData.append('descripcion', newProduct.descripcion);
+    formData.append('es_unidad', String(newProduct.es_unidad));
+    if (imageFile) formData.append('image', imageFile);
+    createProductMutation.mutate(formData);
   };
 
   return (
@@ -138,16 +155,49 @@ const CreateProduct = () => {
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1">
-            URL de imagen
+          <label className="block text-xs sm:text-sm font-bold text-text-dark mb-1.5">
+            Imagen del producto
           </label>
           <input
-            type="url"
-            value={newProduct.imagen_url}
-            onChange={(e) => setNewProduct({ ...newProduct, imagen_url: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-            placeholder="https://..."
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={createProductMutation.isPending}
           />
+          <button
+            type="button"
+            onClick={() => !createProductMutation.isPending && fileInputRef.current?.click()}
+            className={`w-full rounded-2xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-2 py-6 px-4 ${
+              imagePreview
+                ? 'border-primary/40 bg-primary/5'
+                : 'border-gray-300 bg-gray-50 hover:border-primary/50 hover:bg-primary/5'
+            } ${createProductMutation.isPending ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-[0.99]'}`}
+          >
+            {imagePreview ? (
+              <>
+                <img
+                  src={imagePreview}
+                  alt="Vista previa"
+                  className="max-h-40 rounded-xl object-contain shadow-sm"
+                />
+                <span className="text-xs text-text-dark/40 font-bold">Tocá para cambiar</span>
+              </>
+            ) : (
+              <>
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <ImagePlus className="w-6 h-6 text-primary/70" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-text-dark text-sm">Seleccionar imagen</p>
+                  <p className="text-xs text-text-dark/40 mt-0.5">
+                    JPG, PNG u otro formato · Se convierte a WebP automáticamente
+                  </p>
+                </div>
+              </>
+            )}
+          </button>
         </div>
 
         <div>
