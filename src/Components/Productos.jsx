@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api/api";
@@ -20,6 +20,18 @@ function Productos() {
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
     const [searchTerm, setSearchTerm] = useState("");
     const [visibleCount, setVisibleCount] = useState(8);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (CATEGORIES.includes(e.detail)) {
+                setActiveCategory(e.detail);
+                setSearchTerm('');
+                setVisibleCount(8);
+            }
+        };
+        window.addEventListener('selectProductCategory', handler);
+        return () => window.removeEventListener('selectProductCategory', handler);
+    }, []);
     
     const {
         data: productos,

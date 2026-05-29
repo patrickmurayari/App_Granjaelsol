@@ -1,39 +1,71 @@
 import { useEffect, useState } from "react";
+import { Tag } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://app-granjaelsol-backend.vercel.app/api';
 
 function HeroSection() {
-    const [imageUrl, setImageUrl] = useState(null);
-    const [altText, setAltText] = useState('Granja El Sol');
+    const [slide, setSlide] = useState(null);
+    const [showButton, setShowButton] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE}/content/carousel`)
             .then((r) => r.json())
             .then((data) => {
                 if (Array.isArray(data) && data.length > 0) {
-                    setImageUrl(data[0].image_url);
-                    setAltText(data[0].alt_text || 'Granja El Sol');
+                    setSlide(data[0]);
                 }
             })
             .catch(() => {});
     }, []);
 
-    return (
-        <section id="carrousel" className="relative w-full h-screen overflow-hidden">
-            {/* Gradient overlay for navbar text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/10 to-transparent z-10 pointer-events-none" />
+    const alt = slide?.alt_text || 'Granja El Sol';
+    console.log(slide);
 
-            {imageUrl ? (
-                <img
-                    src={imageUrl}
-                    alt={altText}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    fetchPriority="high"
-                    decoding="sync"
-                    loading="eager"
-                />
+    useEffect(() => {
+        if (!slide) return;
+        const t = setTimeout(() => setShowButton(true), 350);
+        return () => clearTimeout(t);
+    }, [slide]);
+
+    return (
+        <section id="carrousel" className="relative w-full overflow-hidden">
+            {/* Gradient overlay for navbar text contrast */}
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/30 to-transparent z-10 pointer-events-none" />
+
+            {/* CTA button */}
+            <button
+                onClick={() => document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth' })}
+                className={`absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-5 py-2.5 rounded-full backdrop-blur-sm bg-white/20 border border-white/50 text-white text-sm font-bold whitespace-nowrap hover:bg-white/35 hover:border-white/80 transition-all duration-300 shadow-lg ${
+                    showButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                } transition-[opacity,transform] duration-700`}
+            >
+                <Tag className="w-4 h-4" />
+                Ofertas Especiales
+            </button>
+
+            {slide ? (
+                <>
+                    {/* Mobile image */}
+                    <img
+                        src={slide.image_url}
+                        alt={alt}
+                        className="block md:hidden w-full h-[80vh] object-cover"
+                        fetchPriority="high"
+                        decoding="sync"
+                        loading="eager"
+                    />
+                    {/* Desktop image */}
+                    <img
+                        src={slide.desktop_image_url}
+                        alt={alt}
+                        className="hidden md:block w-full h-[93vh] object-cover"
+                        fetchPriority="high"
+                        decoding="sync"
+                        loading="eager"
+                    />
+                </>
             ) : (
-                <div className="absolute inset-0 bg-gray-900 animate-pulse" />
+                <div className="w-full h-[80vh] md:h-[75vh] bg-gray-900 animate-pulse" />
             )}
         </section>
     );

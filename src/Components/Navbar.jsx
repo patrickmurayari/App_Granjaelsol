@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import {Instagram, Facebook, Send, ShoppingCart } from 'lucide-react';
+import { Instagram, Facebook, Send, ShoppingCart, Tag } from 'lucide-react';
 import logo from "../img/logoo.webp"
 import { CONTACT_INFO } from '../constants/contactInfo';
 import { scrollToSection } from '../utils/scrollUtils';
@@ -75,7 +75,7 @@ function Navbar() {
                         {/* Sustituimos la imagen por un placeholder visualmente agradable con bg-secondary */}
                         {/* Color del texto principal actualizado a text-text-dark */}
                         <div className="flex items-center gap-2">
-                            <span className={`font-extrabold text-2xl md:text-2xl transition-colors duration-300 ${navTextClass}`}>Granja el Sol</span>
+                            <span className={`font-extrabold text-2xl md:text-4xl transition-colors duration-300 ${navTextClass}`}>Granja el Sol</span>
                         </div>
                     </div>
                 </div>
@@ -118,7 +118,7 @@ function Navbar() {
                             className={`relative hover:text-primary transition-colors duration-300 ${navTextClass}`}
                             aria-label="Abrir carrito"
                         >
-                            <ShoppingCart className="h-5 w-5" />
+                            <ShoppingCart className="h-8 w-8" />
                             {count > 0 && (
                                 <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center">
                                     {count}
@@ -129,7 +129,7 @@ function Navbar() {
                         <a href={CONTACT_INFO.whatsappUrl} target="_blank" rel="noopener noreferrer" 
                         className={`hover:text-primary transition-colors duration-300 ${navTextClass}`}
                         aria-label="WhatsApp">
-                            <Send className="h-5 w-5" /> 
+                            <Send className="h-8 w-8" /> 
                         </a>
                     </div>
                 </div>
@@ -171,12 +171,18 @@ function Navbar() {
                         { key: 'carrousel', label: 'Inicio',        action: () => scrollToSection('carrousel') },
                         { key: 'quienessomos', label: 'Quiénes Somos', action: () => navigate('/quienessomos') },
                         { key: 'productos',  label: 'Productos',     action: () => scrollToSection('productos') },
-                    ].map(({ key, label, action }) => (
+                        { key: 'ofertas',    label: 'Ofertas',       action: () => scrollToSection('ofertas'), icon: Tag, highlight: true },
+                    ].map(({ key, label, action, icon: Icon, highlight }) => (
                         <div
                             key={key}
                             onClick={() => { action(); setMenuOpen(false); }}
-                            className="flex items-center px-4 py-3 rounded-xl text-text-dark font-semibold text-base hover:bg-primary/10 hover:text-primary transition-all duration-200 cursor-pointer"
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold text-base transition-all duration-200 cursor-pointer ${
+                                highlight
+                                    ? 'text-orange-600 bg-orange-50 hover:bg-orange-100'
+                                    : 'text-text-dark hover:bg-primary/10 hover:text-primary'
+                            }`}
                         >
+                            {Icon && <Icon className="w-4 h-4" />}
                             {label}
                         </div>
                     ))}
