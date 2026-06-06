@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Instagram, Facebook, Send, ShoppingCart, Tag } from 'lucide-react';
+import { Instagram, Facebook, Send, ShoppingCart, Tag, Star } from 'lucide-react';
 import logo from "../img/logoo.webp"
 import { CONTACT_INFO } from '../constants/contactInfo';
 import { scrollToSection } from '../utils/scrollUtils';
@@ -75,7 +75,14 @@ function Navbar() {
                         {/* Sustituimos la imagen por un placeholder visualmente agradable con bg-secondary */}
                         {/* Color del texto principal actualizado a text-text-dark */}
                         <div className="flex items-center gap-2">
-                            <span className={`font-extrabold text-2xl md:text-4xl transition-colors duration-300 ${navTextClass}`}>Granja el Sol</span>
+                            <div className="flex flex-col items-center">
+                                <div className="flex items-center gap-0.5 mb-0.5">
+                                    <Star className="w-3 h-3 text-amber-400 animate-pulse fill-amber-400" />
+                                    <Star className="w-3 h-3 text-amber-400 animate-pulse fill-amber-400 [animation-delay:200ms]" />
+                                    <Star className="w-3 h-3 text-amber-400 animate-pulse fill-amber-400 [animation-delay:400ms]" />
+                                </div>
+                                <span className={`font-extrabold text-2xl md:text-4xl transition-colors duration-300 ${navTextClass}`}>Granja el Sol</span>
+                            </div>
                         </div>
                     </div>
                 </div>
