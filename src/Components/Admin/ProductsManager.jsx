@@ -176,7 +176,7 @@ const ProductsManager = ({ addToast }) => {
           <table className="min-w-full text-xs sm:text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">ID</th>
+                <th className="px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark w-14"></th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Nombre</th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark hidden sm:table-cell">Categoría</th>
                 <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Precio</th>
@@ -193,9 +193,20 @@ const ProductsManager = ({ addToast }) => {
                 return (
                   <tr
                     key={p.id}
-                    className={`border-t border-gray-100 transition-opacity ${!isDisponible ? 'opacity-50 bg-gray-50' : ''}`}
+                    className={`border-t border-gray-100 transition-opacity items-center ${!isDisponible ? 'opacity-50 bg-gray-50' : ''}`}
                   >
-                    <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark/80">{p.id}</td>
+                    <td className="px-3 sm:px-4 py-2 sm:py-3">
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 aspect-square">
+                        {p.imagen_url ? (
+                          <img
+                            src={p.imagen_url}
+                            alt={p.nombre}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : null}
+                      </div>
+                    </td>
                     <td className="px-3 sm:px-4 py-2 sm:py-3 text-text-dark font-medium">
                       {p.nombre}
                       {!isDisponible && <span className="ml-2 text-xs text-red-500 font-bold">(Sin stock)</span>}
