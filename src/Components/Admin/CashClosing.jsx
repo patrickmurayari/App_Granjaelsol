@@ -12,8 +12,6 @@ const CashClosing = () => {
     venta_total_balanza: '',
     venta_posnet: '',
     venta_transferencias: '',
-    fondo_inicial: '',
-    efectivo_final: '',
     gastos_del_dia: '',
     notas: '',
   });
@@ -47,8 +45,6 @@ const CashClosing = () => {
         venta_total_balanza: '',
         venta_posnet: '',
         venta_transferencias: '',
-        fondo_inicial: '',
-        efectivo_final: '',
         gastos_del_dia: '',
         notas: '',
       });
@@ -65,8 +61,6 @@ const CashClosing = () => {
         venta_total_balanza: cierreHoy.venta_total_balanza?.toString() || '',
         venta_posnet: cierreHoy.venta_posnet?.toString() || '',
         venta_transferencias: cierreHoy.venta_transferencias?.toString() || '',
-        fondo_inicial: cierreHoy.fondo_inicial?.toString() || '',
-        efectivo_final: cierreHoy.efectivo_final?.toString() || '',
         gastos_del_dia: cierreHoy.gastos_del_dia?.toString() || '',
         notas: cierreHoy.notas || '',
       });
@@ -75,7 +69,14 @@ const CashClosing = () => {
 
   const submitCierre = (e) => {
     e.preventDefault();
-    saveCierreMutation.mutate({ payload: cierreForm, id: editingCierreId });
+    const payload = {
+      venta_total_balanza: Number(cierreForm.venta_total_balanza),
+      venta_posnet: Number(cierreForm.venta_posnet) || 0,
+      venta_transferencias: Number(cierreForm.venta_transferencias) || 0,
+      gastos_del_dia: Number(cierreForm.gastos_del_dia) || 0,
+      notas: cierreForm.notas,
+    };
+    saveCierreMutation.mutate({ payload, id: editingCierreId });
   };
 
   const handleEditCierre = (c) => {
@@ -84,8 +85,6 @@ const CashClosing = () => {
       venta_total_balanza: c.venta_total_balanza?.toString() || '',
       venta_posnet: c.venta_posnet?.toString() || '',
       venta_transferencias: c.venta_transferencias?.toString() || '',
-      fondo_inicial: c.fondo_inicial?.toString() || '',
-      efectivo_final: c.efectivo_final?.toString() || '',
       gastos_del_dia: c.gastos_del_dia?.toString() || '',
       notas: c.notas || '',
     });
@@ -97,8 +96,6 @@ const CashClosing = () => {
       venta_total_balanza: '',
       venta_posnet: '',
       venta_transferencias: '',
-      fondo_inicial: '',
-      efectivo_final: '',
       gastos_del_dia: '',
       notas: '',
     });
@@ -108,18 +105,11 @@ const CashClosing = () => {
     const ventaBalanza = Number(cierreForm.venta_total_balanza) || 0;
     const posnet = Number(cierreForm.venta_posnet) || 0;
     const transferencias = Number(cierreForm.venta_transferencias) || 0;
-    const fondoInicial = Number(cierreForm.fondo_inicial) || 0;
-    const efectivoFinal = Number(cierreForm.efectivo_final) || 0;
     const gastos = Number(cierreForm.gastos_del_dia) || 0;
 
-    const ventaEfectivoTeorica = ventaBalanza - posnet - transferencias;
-    const diferenciaCaja = (efectivoFinal - fondoInicial) - (ventaEfectivoTeorica - gastos);
+    const efectivoNeto = ventaBalanza - (posnet + transferencias) - gastos;
 
-    return {
-      ventaEfectivoTeorica,
-      diferenciaCaja,
-      esPositivo: diferenciaCaja >= 0,
-    };
+    return { efectivoNeto };
   }, [cierreForm]);
 
   return (
@@ -162,6 +152,7 @@ const CashClosing = () => {
               <input
                 type="number"
                 inputMode="decimal"
+                required
                 value={cierreForm.venta_total_balanza}
                 onChange={(e) => setCierreForm({ ...cierreForm, venta_total_balanza: e.target.value })}
                 className="w-full px-4 py-3 text-lg sm:text-xl font-bold text-gray-900 text-center rounded-lg border-2 border-blue-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition placeholder:text-gray-400"
@@ -206,42 +197,6 @@ const CashClosing = () => {
             </div>
           </div>
 
-          {/* Sección: Control de Efectivo */}
-          <div className="bg-green-50 rounded-xl p-3 sm:p-4">
-            <h4 className="text-xs sm:text-sm font-bold text-green-800 mb-3 flex items-center gap-2">
-              <Calculator className="w-4 h-4" />
-              CONTROL DE EFECTIVO
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-text-dark mb-1">
-                  Fondo Inicial (al abrir)
-                </label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={cierreForm.fondo_inicial}
-                  onChange={(e) => setCierreForm({ ...cierreForm, fondo_inicial: e.target.value })}
-                  className="w-full px-3 py-2.5 text-base sm:text-lg font-bold text-gray-900 text-center rounded-lg border-2 border-green-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition placeholder:text-gray-400"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-text-dark mb-1">
-                  Efectivo Final (al cerrar)
-                </label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={cierreForm.efectivo_final}
-                  onChange={(e) => setCierreForm({ ...cierreForm, efectivo_final: e.target.value })}
-                  className="w-full px-3 py-2.5 text-base sm:text-lg font-bold text-gray-900 text-center rounded-lg border-2 border-green-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition placeholder:text-gray-400"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Sección: Gastos */}
           <div className="bg-red-50 rounded-xl p-3 sm:p-4">
             <h4 className="text-xs sm:text-sm font-bold text-red-800 mb-3 flex items-center gap-2">
@@ -269,22 +224,11 @@ const CashClosing = () => {
               RESUMEN AUTOMÁTICO
             </h4>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-text-dark/70">Venta estimada en efectivo:</span>
-              <span className="text-lg font-bold text-blue-700">
-                ${calculosCierre.ventaEfectivoTeorica.toLocaleString('es-AR')}
+              <span className="text-sm font-bold text-text-dark">Efectivo Neto Estimado:</span>
+              <span className="text-xl sm:text-2xl font-extrabold text-blue-700">
+                ${calculosCierre.efectivoNeto.toLocaleString('es-AR')}
               </span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-              <span className="text-sm font-bold text-text-dark">Diferencia de caja:</span>
-              <span className={`text-xl sm:text-2xl font-extrabold ${calculosCierre.esPositivo ? 'text-green-600' : 'text-red-600'}`}>
-                {calculosCierre.diferenciaCaja >= 0 ? '+' : ''}{calculosCierre.diferenciaCaja.toLocaleString('es-AR')}
-              </span>
-            </div>
-            <p className="text-xs text-text-dark/50 mt-2">
-              {calculosCierre.esPositivo 
-                ? 'Cuadra correctamente' 
-                : 'Falta dinero en caja - revisar tickets'}
-            </p>
           </div>
 
           {/* Notas opcionales */}
@@ -361,13 +305,13 @@ const CashClosing = () => {
                   <th className="text-left px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Fecha</th>
                   <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Balanza</th>
                   <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Digital</th>
-                  <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Diferencia</th>
+                  <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Ef. Estimado</th>
                   <th className="text-right px-3 sm:px-4 py-2 sm:py-3 font-bold text-text-dark">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {cierres?.map((c) => {
-                  const diferencia = c.diferencia_caja || 0;
+                  const efectivoNeto = (c.venta_total_balanza || 0) - (c.venta_posnet || 0) - (c.venta_transferencias || 0) - (c.gastos_del_dia || 0);
                   const esHoy = c.fecha === hoy;
                   return (
                     <tr
@@ -401,8 +345,8 @@ const CashClosing = () => {
                           </div>
                         </div>
                       </td>
-                      <td className={`px-3 sm:px-4 py-2 sm:py-3 text-right font-extrabold ${diferencia >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {diferencia >= 0 ? '+' : ''}{diferencia.toLocaleString('es-AR')}
+                      <td className={`px-3 sm:px-4 py-2 sm:py-3 text-right font-extrabold ${efectivoNeto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ${efectivoNeto.toLocaleString('es-AR')}
                       </td>
                       <td className="px-3 sm:px-4 py-2 sm:py-3">
                         <button
