@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { Instagram, Facebook, Send, ShoppingCart, Tag, Star } from 'lucide-react';
 import logo from "../img/logoo.webp"
@@ -11,7 +11,6 @@ function Navbar() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrollProgress, setScrollProgress] = useState(0);
     const { count, openCart } = useCart();
-    const navigate = useNavigate();
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
 
@@ -176,7 +175,7 @@ function Navbar() {
                 <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
                     {[
                         { key: 'carrousel', label: 'Inicio',        action: () => scrollToSection('carrousel') },
-                        { key: 'quienessomos', label: 'Quiénes Somos', action: () => navigate('/quienessomos') },
+                        { key: 'quienes-somos', label: 'Quiénes Somos', action: () => scrollToSection('quienes-somos') },
                         { key: 'productos',  label: 'Productos',     action: () => scrollToSection('productos') },
                         { key: 'ofertas',    label: 'Ofertas',       action: () => scrollToSection('ofertas'), icon: Tag, highlight: true },
                     ].map(({ key, label, action, icon: Icon, highlight }) => (

@@ -7,6 +7,7 @@ import Productos from './Components/Productos'
 import Footer from './Components/Footer'
 
 import ProductosAdicionales from './Components/ProductosAdicionales'
+import About from './Components/About'
 import StoreOffers from './Components/StoreOffers'
 import MetodosPago from './Components/MetodosPago'
 import Admin from './pages/Admin';
@@ -33,6 +34,7 @@ const App = () => {
                             <HeroSection />
                             <Productos />
                             <ProductosAdicionales />
+                            <About />
                             <StoreOffers />
                             <MetodosPago />
                             <Footer />

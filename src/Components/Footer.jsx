@@ -68,14 +68,6 @@ function Footer() {
 
                     {/* Col 2 – La Empresa + Horarios */}
                     <div>
-                        <ColHeading>La Empresa</ColHeading>
-                        <ul className="space-y-2 mb-6">
-                            <li>
-                                <Link to="/quienessomos" className="text-sm text-white hover:text-white transition">
-                                    Quiénes Somos
-                                </Link>
-                            </li>
-                        </ul>
                         <ColHeading>Horarios</ColHeading>
                         <div className="space-y-3">
                             {SCHEDULE.map(({ days, hours }) => (
