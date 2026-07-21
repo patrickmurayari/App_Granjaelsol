@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import PropTypes from 'prop-types';
 import api from '../../api/api';
-import { formatDate, getTodayLocal } from '../../utils/dateUtils';
+import { formatDate } from '../../utils/dateUtils';
 import {
   FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet, ChevronLeft, ChevronRight, ClipboardCopy, TrendingUp
 } from 'lucide-react';
@@ -21,12 +21,6 @@ const RemitosHistory = ({ addToast }) => {
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [deletingEntryId, setDeletingEntryId] = useState(null);
   const [statementWeekOffset, setStatementWeekOffset] = useState(0);
-  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
-  const [adjustmentForm, setAdjustmentForm] = useState({
-    entry_date: getTodayLocal(),
-    total_debe: '',
-    adjustment_notes: '',
-  });
 
   const {
     data: suppliers,
@@ -164,26 +158,6 @@ const RemitosHistory = ({ addToast }) => {
     },
   });
 
-  const createAdjustmentMutation = useMutation({
-    mutationFn: async (payload) => {
-      const { data } = await api.post('/inventory/entries', payload);
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['supplier-entries', remitosSupplier] });
-      await queryClient.invalidateQueries({ queryKey: ['supplier-balance', remitosSupplier] });
-      setShowAdjustmentModal(false);
-      setAdjustmentForm({
-        entry_date: getTodayLocal(),
-        total_debe: '',
-        adjustment_notes: '',
-      });
-      addToast('Ajuste de saldo registrado correctamente');
-    },
-    onError: () => {
-      addToast('Error al registrar ajuste. Verificá los datos.', 'error');
-    },
-  });
 
   const handleStartEdit = (item) => {
     const weights = Array.isArray(item.weights) ? item.weights : [];
@@ -419,32 +393,23 @@ const RemitosHistory = ({ addToast }) => {
                     </div>
                   ) : (
                     <>
-                      <div className="relative mb-4 flex gap-2">
-                        <div className="relative flex-1">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            placeholder="Buscar por número de remito..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
-                          />
-                          {searchTerm && (
-                            <button
-                              onClick={() => setSearchTerm('')}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => setShowAdjustmentModal(true)}
-                          className="px-3 py-2.5 rounded-xl font-bold text-xs bg-primary text-white hover:bg-secondary transition flex items-center gap-1.5 whitespace-nowrap"
-                        >
-                          <Wallet className="w-4 h-4" />
-                          + Ajuste / Saldo Inicial
-                        </button>
+                      <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <input
+                          type="text"
+                          placeholder="Buscar por número de remito..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
+                        />
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
 
                       {filteredEntries.length === 0 ? (
@@ -1391,103 +1356,6 @@ const RemitosHistory = ({ addToast }) => {
         </div>
       )}
 
-      {showAdjustmentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-[60]" onClick={() => setShowAdjustmentModal(false)}>
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-amber-700" />
-              </div>
-              <h3 className="text-base sm:text-lg font-heading font-extrabold" style={{ color: '#111827' }}>
-                Cargar Ajuste / Saldo Inicial
-              </h3>
-            </div>
-            <p className="text-sm text-text-dark/70 mb-4">
-              Registra un ajuste manual en la cuenta corriente del proveedor. No requiere carga de productos.
-            </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const amount = Number(adjustmentForm.total_debe);
-                if (!amount) return;
-                createAdjustmentMutation.mutate({
-                  supplier_id: remitosSupplier,
-                  is_adjustment: true,
-                  entry_date: adjustmentForm.entry_date,
-                  total_debe: amount,
-                  adjustment_notes: adjustmentForm.adjustment_notes.trim() || null,
-                });
-              }}
-              className="space-y-3"
-            >
-              <div>
-                <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Fecha *</label>
-                <input
-                  type="date"
-                  value={adjustmentForm.entry_date}
-                  onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, entry_date: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                  style={{ color: '#111827' }}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Monto del Ajuste ($) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={adjustmentForm.total_debe}
-                  onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, total_debe: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
-                  style={{ color: '#111827' }}
-                  placeholder="Ej: 150000 o -50000"
-                  required
-                />
-                <p className="text-[10px] text-text-dark/50 mt-1">Usá valor positivo (deuda) o negativo (descuento)</p>
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Observaciones / Notas</label>
-                <textarea
-                  value={adjustmentForm.adjustment_notes}
-                  onChange={(e) => setAdjustmentForm((prev) => ({ ...prev, adjustment_notes: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm resize-none"
-                  style={{ color: '#111827' }}
-                  rows={2}
-                  placeholder="Ej: Saldo de arrastre previo al sistema"
-                />
-              </div>
-              <div className="flex gap-3 justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowAdjustmentModal(false)}
-                  className="px-4 py-2 rounded-xl border-2 border-gray-200 font-bold text-sm hover:border-primary transition"
-                  style={{ color: '#111827' }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={createAdjustmentMutation.isPending || !adjustmentForm.total_debe}
-                  className="px-4 py-2 rounded-xl font-bold text-sm bg-amber-600 text-white hover:bg-amber-700 transition disabled:opacity-60 flex items-center gap-2"
-                >
-                  {createAdjustmentMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Wallet className="w-4 h-4" />
-                      Registrar Ajuste
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 };
