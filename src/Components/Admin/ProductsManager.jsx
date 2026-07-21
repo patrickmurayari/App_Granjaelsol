@@ -139,7 +139,7 @@ const ProductsManager = ({ addToast }) => {
         <select
           value={selectedCategory}
           onChange={(e) => { setSelectedCategory(e.target.value); setSearchProd(''); }}
-          className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 bg-white cursor-pointer"
+          className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold text-gray-900 bg-white cursor-pointer"
         >
           {ADMIN_CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>{cat}</option>
@@ -153,7 +153,7 @@ const ProductsManager = ({ addToast }) => {
             placeholder="Buscar producto por nombre..."
             value={searchProd}
             onChange={(e) => setSearchProd(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm font-bold text-gray-900 placeholder:text-gray-400"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold text-gray-900 placeholder:text-gray-400"
           />
           {searchProd && (
             <button
@@ -341,7 +341,7 @@ const ProductsManager = ({ addToast }) => {
                   value={editForm.nombre}
                   onChange={(e) => set('nombre', e.target.value)}
                   required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
                   placeholder="Nombre del producto"
                 />
               </div>
@@ -355,7 +355,7 @@ const ProductsManager = ({ addToast }) => {
                   step="0.01"
                   value={editForm.precio}
                   onChange={(e) => set('precio', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
                   placeholder="Ej: 2500"
                 />
               </div>
@@ -366,7 +366,7 @@ const ProductsManager = ({ addToast }) => {
                 <select
                   value={editForm.categoria}
                   onChange={(e) => set('categoria', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm bg-white"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm bg-white"
                 >
                   <option value="">Seleccionar...</option>
                   <optgroup label="Carnicería">
@@ -416,7 +416,7 @@ const ProductsManager = ({ addToast }) => {
                     step="0.001"
                     value={editForm.peso_promedio_unidad}
                     onChange={(e) => set('peso_promedio_unidad', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
                     placeholder="Ej: 0.250"
                   />
                 </div>

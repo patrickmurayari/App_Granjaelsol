@@ -169,7 +169,7 @@ const OffersManager = ({ addToast }) => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="ej: Oferta de la semana — Asado"
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition text-sm font-body"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition text-base md:text-sm font-body"
             disabled={uploading}
           />
         </div>
@@ -182,7 +182,7 @@ const OffersManager = ({ addToast }) => {
           <select
             value={linkToCategory}
             onChange={(e) => setLinkToCategory(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition text-sm font-body bg-white"
+            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition text-base md:text-sm font-body bg-white"
             disabled={uploading}
           >
             <option value="">Sin categoría</option>

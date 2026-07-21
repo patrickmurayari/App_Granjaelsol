@@ -239,7 +239,7 @@ const CashClosing = () => {
             <textarea
               value={cierreForm.notas}
               onChange={(e) => setCierreForm({ ...cierreForm, notas: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm resize-none"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm resize-none"
               rows="2"
               placeholder="Observaciones del día..."
             />
