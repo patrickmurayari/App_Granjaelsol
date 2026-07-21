@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Tag } from "lucide-react";
+import { Loader2, Tag } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://app-granjaelsol-backend.vercel.app/api';
 
 function HeroSection() {
     const [slide, setSlide] = useState(null);
     const [showButton, setShowButton] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE}/content/carousel`)
@@ -19,7 +20,6 @@ function HeroSection() {
     }, []);
 
     const alt = slide?.alt_text || 'Granja El Sol';
-    console.log(slide);
 
     useEffect(() => {
         if (!slide) return;
@@ -44,28 +44,42 @@ function HeroSection() {
             </button>
 
             {slide ? (
-                <>
+                <div className="relative w-full">
+                    {/* Loading skeleton */}
+                    {!imageLoaded && (
+                        <div className="absolute inset-0 z-10 bg-gray-200 animate-pulse rounded-2xl flex items-center justify-center">
+                            <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+                        </div>
+                    )}
                     {/* Mobile image */}
                     <img
                         src={slide.image_url}
                         alt={alt}
-                        className="block md:hidden w-full h-[80vh] object-cover"
+                        className={`block md:hidden w-full h-[80vh] object-cover transition-opacity duration-500 ${
+                            imageLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
                         fetchPriority="high"
                         decoding="sync"
                         loading="eager"
+                        onLoad={() => setImageLoaded(true)}
                     />
                     {/* Desktop image */}
                     <img
                         src={slide.desktop_image_url}
                         alt={alt}
-                        className="hidden md:block w-full h-[93vh] object-cover"
+                        className={`hidden md:block w-full h-[93vh] object-cover transition-opacity duration-500 ${
+                            imageLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
                         fetchPriority="high"
                         decoding="sync"
                         loading="eager"
+                        onLoad={() => setImageLoaded(true)}
                     />
-                </>
+                </div>
             ) : (
-                <div className="w-full h-[80vh] md:h-[75vh] bg-gray-900 animate-pulse" />
+                <div className="w-full h-[80vh] md:h-[93vh] bg-gray-200 animate-pulse rounded-2xl flex items-center justify-center">
+                    <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+                </div>
             )}
         </section>
     );

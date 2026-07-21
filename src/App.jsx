@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import ReactGA from 'react-ga4';
-import confetti from 'canvas-confetti';
 import { Route, Routes } from 'react-router-dom';
 import Navbar from './Components/Navbar';
 import HeroSection from './Components/HeroSection'
@@ -21,22 +20,6 @@ ReactGA.initialize('G-GLJTCBRGXT');
 const App = () => {
     useEffect(() => {
         ReactGA.send({ hitType: 'pageview', page: window.location.pathname });
-    }, []);
-
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            const duration = 3000;
-            const end = Date.now() + duration;
-            const colors = ['#74ACDF', '#FFFFFF', '#FFD700'];
-
-            const frame = () => {
-                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.8 }, colors });
-                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.8 }, colors });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            };
-            frame();
-        }, 500);
-        return () => clearTimeout(timeout);
     }, []);
 
     return (
