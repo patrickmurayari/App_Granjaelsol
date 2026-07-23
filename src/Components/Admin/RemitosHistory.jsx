@@ -610,7 +610,7 @@ const RemitosHistory = ({ addToast }) => {
                                               type="date"
                                               value={editPaymentForm.payment_date}
                                               onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, payment_date: e.target.value }))}
-                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                               style={{ color: '#111827' }}
                                               required
                                             />
@@ -620,7 +620,7 @@ const RemitosHistory = ({ addToast }) => {
                                             <select
                                               value={editPaymentForm.method}
                                               onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, method: e.target.value }))}
-                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                               style={{ color: '#111827' }}
                                               required
                                             >
@@ -635,7 +635,7 @@ const RemitosHistory = ({ addToast }) => {
                                               inputMode="decimal"
                                               value={editPaymentForm.amount_haber}
                                               onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, amount_haber: e.target.value }))}
-                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                              className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                               style={{ color: '#111827' }}
                                               required
                                             />
@@ -728,7 +728,7 @@ const RemitosHistory = ({ addToast }) => {
                                       type="date"
                                       value={editPaymentForm.payment_date}
                                       onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, payment_date: e.target.value }))}
-                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                       style={{ color: '#111827' }}
                                       required
                                     />
@@ -738,7 +738,7 @@ const RemitosHistory = ({ addToast }) => {
                                     <select
                                       value={editPaymentForm.method}
                                       onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, method: e.target.value }))}
-                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                       style={{ color: '#111827' }}
                                       required
                                     >
@@ -753,7 +753,7 @@ const RemitosHistory = ({ addToast }) => {
                                       inputMode="decimal"
                                       value={editPaymentForm.amount_haber}
                                       onChange={(e) => setEditPaymentForm((prev) => ({ ...prev, amount_haber: e.target.value }))}
-                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                       style={{ color: '#111827' }}
                                       required
                                     />
@@ -1054,7 +1054,7 @@ const RemitosHistory = ({ addToast }) => {
                                 type="text"
                                 value={editForm.product_name}
                                 onChange={(e) => setEditForm((prev) => ({ ...prev, product_name: e.target.value }))}
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                 style={{ color: '#111827' }}
                                 required
                               />
@@ -1096,7 +1096,7 @@ const RemitosHistory = ({ addToast }) => {
                                   inputMode="decimal"
                                   value={editForm.weights}
                                   onChange={(e) => setEditForm((prev) => ({ ...prev, weights: e.target.value }))}
-                                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                   style={{ color: '#111827' }}
                                   placeholder="3"
                                   required
@@ -1106,7 +1106,7 @@ const RemitosHistory = ({ addToast }) => {
                                   type="text"
                                   value={editForm.weights}
                                   onChange={(e) => setEditForm((prev) => ({ ...prev, weights: e.target.value }))}
-                                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                   style={{ color: '#111827' }}
                                   placeholder="94, 95, 99"
                                   required
@@ -1122,7 +1122,7 @@ const RemitosHistory = ({ addToast }) => {
                                 inputMode="decimal"
                                 value={editForm.unit_price}
                                 onChange={(e) => setEditForm((prev) => ({ ...prev, unit_price: e.target.value }))}
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm"
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                                 style={{ color: '#111827' }}
                                 required
                               />

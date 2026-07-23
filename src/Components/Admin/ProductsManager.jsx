@@ -341,7 +341,7 @@ const ProductsManager = ({ addToast }) => {
                   value={editForm.nombre}
                   onChange={(e) => set('nombre', e.target.value)}
                   required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   placeholder="Nombre del producto"
                 />
               </div>
@@ -355,7 +355,7 @@ const ProductsManager = ({ addToast }) => {
                   step="0.01"
                   value={editForm.precio}
                   onChange={(e) => set('precio', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   placeholder="Ej: 2500"
                 />
               </div>
@@ -366,7 +366,7 @@ const ProductsManager = ({ addToast }) => {
                 <select
                   value={editForm.categoria}
                   onChange={(e) => set('categoria', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm bg-white"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm bg-white text-gray-900 font-medium placeholder:text-gray-400"
                 >
                   <option value="">Seleccionar...</option>
                   <optgroup label="Carnicería">
@@ -416,7 +416,7 @@ const ProductsManager = ({ addToast }) => {
                     step="0.001"
                     value={editForm.peso_promedio_unidad}
                     onChange={(e) => set('peso_promedio_unidad', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                     placeholder="Ej: 0.250"
                   />
                 </div>

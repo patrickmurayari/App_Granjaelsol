@@ -73,7 +73,7 @@ const CreateProduct = () => {
             type="text"
             value={newProduct.nombre}
             onChange={(e) => setNewProduct({ ...newProduct, nombre: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
             placeholder="Ej: Chorizo Criollo"
             required
           />
@@ -88,7 +88,7 @@ const CreateProduct = () => {
               type="number"
               value={newProduct.precio}
               onChange={(e) => setNewProduct({ ...newProduct, precio: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
               placeholder="Ej: 2500"
             />
           </div>
@@ -101,7 +101,7 @@ const CreateProduct = () => {
               step="0.1"
               value={newProduct.peso_promedio_unidad}
               onChange={(e) => setNewProduct({ ...newProduct, peso_promedio_unidad: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
               placeholder="Ej: 0.5"
             />
           </div>
@@ -119,7 +119,7 @@ const CreateProduct = () => {
               const esAdicional = adicionales.includes(cat);
               setNewProduct({ ...newProduct, categoria: cat, es_unidad: esAdicional ? true : newProduct.es_unidad });
             }}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
           >
             <option value="">Seleccionar...</option>
             <optgroup label="Carnicería">
@@ -207,7 +207,7 @@ const CreateProduct = () => {
           <textarea
             value={newProduct.descripcion}
             onChange={(e) => setNewProduct({ ...newProduct, descripcion: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm resize-none"
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm resize-none text-gray-900 bg-white font-medium placeholder:text-gray-400"
             rows="3"
             placeholder="Descripción del producto..."
           />

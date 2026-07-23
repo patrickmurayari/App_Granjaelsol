@@ -260,7 +260,7 @@ const InventoryManager = ({ addToast }) => {
                   type="text"
                   value={newSupplierForm.name}
                   onChange={(e) => setNewSupplierForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   placeholder="Ej: Lema e Hijos"
                   required
@@ -271,7 +271,7 @@ const InventoryManager = ({ addToast }) => {
                 <select
                   value={newSupplierForm.category}
                   onChange={(e) => setNewSupplierForm((prev) => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold cursor-pointer text-gray-900 bg-white placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                 >
                   <option value="Carne">Carne</option>
@@ -412,7 +412,7 @@ const InventoryManager = ({ addToast }) => {
                   type="text"
                   value={entryForm.invoice_number}
                   onChange={(e) => setEntryForm((prev) => ({ ...prev, invoice_number: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   placeholder="REM-001"
                 />
               </div>
@@ -422,7 +422,7 @@ const InventoryManager = ({ addToast }) => {
                   type="date"
                   value={entryForm.entry_date}
                   onChange={(e) => setEntryForm((prev) => ({ ...prev, entry_date: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -448,7 +448,7 @@ const InventoryManager = ({ addToast }) => {
                         type="text"
                         value={item.product_name}
                         onChange={(e) => handleEntryItemChange(idx, 'product_name', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                        className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                         placeholder="Ej: Asado"
                         required
                       />
@@ -490,7 +490,7 @@ const InventoryManager = ({ addToast }) => {
                           inputMode="decimal"
                           value={item.weights}
                           onChange={(e) => handleEntryItemChange(idx, 'weights', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                          className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                           style={{ color: '#111827' }}
                           placeholder="3"
                           required
@@ -502,7 +502,7 @@ const InventoryManager = ({ addToast }) => {
                             inputMode="text"
                             value={item.weights}
                             onChange={(e) => handleEntryItemChange(idx, 'weights', e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                            className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                             placeholder="94, 95, 99"
                             required
                           />
@@ -519,7 +519,7 @@ const InventoryManager = ({ addToast }) => {
                         inputMode="text"
                         value={item.unit_price}
                         onChange={(e) => handleEntryItemChange(idx, 'unit_price', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                        className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                         placeholder="8500"
                         required
                       />
@@ -595,7 +595,7 @@ const InventoryManager = ({ addToast }) => {
                   inputMode="decimal"
                   value={entryForm.iva_21}
                   onChange={(e) => setEntryForm((prev) => ({ ...prev, iva_21: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   placeholder="0.00"
                 />
@@ -610,7 +610,7 @@ const InventoryManager = ({ addToast }) => {
                   inputMode="decimal"
                   value={entryForm.percepcion_iva}
                   onChange={(e) => setEntryForm((prev) => ({ ...prev, percepcion_iva: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   placeholder="0.00"
                 />
@@ -625,7 +625,7 @@ const InventoryManager = ({ addToast }) => {
                   inputMode="decimal"
                   value={entryForm.percepcion_iibb}
                   onChange={(e) => setEntryForm((prev) => ({ ...prev, percepcion_iibb: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
                   style={{ color: '#111827' }}
                   placeholder="0.00"
                 />
@@ -681,7 +681,7 @@ const InventoryManager = ({ addToast }) => {
                 type="date"
                 value={paymentForm.payment_date}
                 onChange={(e) => setPaymentForm((prev) => ({ ...prev, payment_date: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm"
+                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
               />
             </div>
 
