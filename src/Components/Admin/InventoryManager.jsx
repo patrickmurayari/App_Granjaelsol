@@ -7,6 +7,38 @@ import {
   Truck, Plus, FileText, Scale, Banknote, CreditCard, Loader2, AlertCircle, Trash2
 } from 'lucide-react';
 
+const parseEntryItem = (item) => {
+  const productName = (item.product_name || '').trim();
+  const unitPrice = Number(item.unit_price);
+  const unitType = item.unit_type === 'u' ? 'u' : 'kg';
+  const raw = String(item.weights ?? '').trim();
+
+  let weights = [];
+  if (unitType === 'u') {
+    const qty = Number(raw);
+    if (raw && Number.isFinite(qty) && qty > 0) weights = [qty];
+  } else {
+    const tokens = raw.split(/[,;\s-]+/).filter(Boolean);
+    const nums = tokens.map(Number);
+    if (tokens.length > 0 && nums.every((n) => Number.isFinite(n) && n > 0)) weights = nums;
+  }
+
+  let error = null;
+  if (!productName) error = 'falta el nombre del producto';
+  else if (weights.length === 0) error = unitType === 'u' ? 'cantidad vacía o inválida' : 'pesos vacíos o inválidos (ej: 94, 95, 99)';
+  else if (!(unitPrice > 0)) error = 'precio inválido';
+
+  const payload = {
+    product_name: productName,
+    unit_type: unitType,
+    weights,
+    unit_price: unitPrice,
+    ...(unitType === 'u' ? { quantity: weights[0] } : {}),
+  };
+
+  return { payload, error };
+};
+
 const InventoryManager = ({ addToast }) => {
   const queryClient = useQueryClient();
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -128,22 +160,28 @@ const InventoryManager = ({ addToast }) => {
     },
   });
 
+  const parsedEntryItems = useMemo(() => entryForm.items.map(parseEntryItem), [entryForm.items]);
+
+  const entryItemErrors = useMemo(() => {
+    const showEmptyRows = entryForm.items.length > 1;
+    return parsedEntryItems
+      .map((parsed, idx) => {
+        if (!parsed.error) return null;
+        const item = entryForm.items[idx];
+        const touched = Boolean((item.product_name || '').trim() || String(item.weights ?? '').trim() || String(item.unit_price ?? '').trim());
+        return { idx, message: parsed.error, visible: touched || showEmptyRows };
+      })
+      .filter(Boolean);
+  }, [parsedEntryItems, entryForm.items]);
+
   // Cálculo en tiempo real del subtotal neto (suma de items)
   const subtotalNeto = useMemo(() => {
-    return entryForm.items.reduce((sum, item) => {
-      const price = Number(item.unit_price) || 0;
-      if (item.unit_type === 'u') {
-        const qty = Number(item.weights) || 0;
-        return sum + Math.round(qty * price * 100) / 100;
-      }
-      const weights = item.weights
-        .split(/[,;\s-]+/)
-        .map(Number)
-        .filter((n) => !isNaN(n) && n > 0);
-      const totalWeight = weights.reduce((s, w) => s + w, 0);
-      return sum + Math.round(totalWeight * price * 100) / 100;
+    return parsedEntryItems.reduce((sum, { payload }) => {
+      const price = payload.unit_price > 0 ? payload.unit_price : 0;
+      const totalQty = payload.weights.reduce((s, w) => s + w, 0);
+      return sum + Math.round(totalQty * price * 100) / 100;
     }, 0);
-  }, [entryForm.items]);
+  }, [parsedEntryItems]);
 
   // Total factura con impuestos
   const totalFactura = useMemo(() => {
@@ -180,32 +218,13 @@ const InventoryManager = ({ addToast }) => {
 
   const submitEntry = (e) => {
     e.preventDefault();
-    const processedItems = entryForm.items.map((item) => {
-      const ut = item.unit_type || 'kg';
-      if (ut === 'u') {
-        const qty = Number(item.weights);
-        return {
-          product_name: item.product_name.trim(),
-          unit_type: 'u',
-          quantity: qty,
-          unit_price: Number(item.unit_price),
-        };
-      }
-      const weights = item.weights
-        .split(/[,;\s-]+/)
-        .map(Number)
-        .filter((n) => !isNaN(n) && n > 0);
-      return {
-        product_name: item.product_name.trim(),
-        unit_type: 'kg',
-        weights,
-        unit_price: Number(item.unit_price),
-      };
-    }).filter((item) => {
-      if (item.unit_type === 'u') return item.product_name && item.quantity > 0 && item.unit_price > 0;
-      return item.product_name && item.weights.length > 0 && item.unit_price > 0;
-    });
+    if (entryItemErrors.length > 0) {
+      const first = entryItemErrors[0];
+      addToast(`Producto ${first.idx + 1}: ${first.message}`, 'error');
+      return;
+    }
 
+    const processedItems = parsedEntryItems.map(({ payload }) => payload);
     if (processedItems.length === 0) return;
 
     createEntryMutation.mutate({
@@ -613,16 +632,27 @@ const InventoryManager = ({ addToast }) => {
 
               {/* Total Factura (Debe) */}
               <div className="flex justify-between items-center bg-amber-50 rounded-lg px-3 py-2.5 border-2 border-amber-200">
-                <span className="text-sm sm:text-base font-bold text-amber-950">Total Factura (Debe)</span>
-                <span className="text-lg sm:text-xl font-extrabold text-amber-950">
+                <span className="text-sm sm:text-base font-bold text-amber-950" style={{ color: '#451a03' }}>Total Factura (Debe)</span>
+                <span className="text-lg sm:text-xl font-extrabold text-amber-950" style={{ color: '#451a03' }}>
                   ${totalFactura.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
 
+            {entryItemErrors.some((err) => err.visible) && (
+              <div className="flex items-start gap-2 rounded-xl border-2 border-red-200 bg-red-50 px-3 py-2.5">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-700" />
+                <ul className="text-xs sm:text-sm font-bold text-red-800 space-y-0.5">
+                  {entryItemErrors.filter((err) => err.visible).map((err) => (
+                    <li key={err.idx}>Producto {err.idx + 1}: {err.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={createEntryMutation.isPending || totalFactura === 0}
+              disabled={createEntryMutation.isPending || totalFactura === 0 || entryItemErrors.length > 0}
               className="w-full bg-primary text-white py-3 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base hover:bg-secondary transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {createEntryMutation.isPending ? (

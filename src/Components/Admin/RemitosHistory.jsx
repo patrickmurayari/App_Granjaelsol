@@ -160,7 +160,7 @@ const RemitosHistory = ({ addToast }) => {
 
 
   const handleStartEdit = (item) => {
-    const weights = Array.isArray(item.weights) ? item.weights : [];
+    const weights = (Array.isArray(item.weights) ? item.weights : []).map(Number).filter(Number.isFinite);
     const ut = item.unit_type || 'kg';
     setEditForm({
       product_name: item.product_name || '',
@@ -1006,9 +1006,9 @@ const RemitosHistory = ({ addToast }) => {
                 <div className="p-4 sm:p-5 overflow-y-auto max-h-[55vh] space-y-3">
                   {entryDetail.items.map((item, idx) => {
                     const isEditing = editingItemId === item.id;
-                    const weights = Array.isArray(item.weights) ? item.weights : [];
+                    const weights = (Array.isArray(item.weights) ? item.weights : []).map(Number).filter(Number.isFinite);
                     const ut = item.unit_type || 'kg';
-                    const totalWeight = weights.reduce((s, w) => s + Number(w), 0);
+                    const totalWeight = weights.reduce((s, w) => s + w, 0);
 
                     if (isEditing) {
                       return (
