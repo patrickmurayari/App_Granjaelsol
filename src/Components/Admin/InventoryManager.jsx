@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
 import { getTodayLocal } from '../../utils/dateUtils';
@@ -11,15 +11,31 @@ const InventoryManager = ({ addToast }) => {
   const queryClient = useQueryClient();
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
-  const [newSupplierForm, setNewSupplierForm] = useState({ name: '', category: 'Carne' });
+  const [categories, setCategories] = useState([]);
+  const [newSupplierForm, setNewSupplierForm] = useState({ name: '', category_id: '' });
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/inventory/supplier-categories')
+      .then(({ data }) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setCategories(data);
+        if (data.length > 0) {
+          setNewSupplierForm((prev) => (prev.category_id ? prev : { ...prev, category_id: data[0].id }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) addToast('No se pudieron cargar las categorías de proveedores', 'error');
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [entryForm, setEntryForm] = useState({
     supplier_id: '',
     invoice_number: '',
     entry_date: getTodayLocal(),
     items: [{ product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
     iva_21: '',
-    percepcion_iva: '',
-    percepcion_iibb: '',
   });
   const [paymentForm, setPaymentForm] = useState({
     supplier_id: '',
@@ -68,8 +84,6 @@ const InventoryManager = ({ addToast }) => {
         entry_date: getTodayLocal(),
         items: [{ product_name: '', weights: '', unit_price: '', unit_type: 'kg' }],
         iva_21: '',
-        percepcion_iva: '',
-        percepcion_iibb: '',
       });
       addToast('Remito registrado correctamente');
     },
@@ -105,7 +119,7 @@ const InventoryManager = ({ addToast }) => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-      setNewSupplierForm({ name: '', category: 'Carne' });
+      setNewSupplierForm({ name: '', category_id: categories[0]?.id || '' });
       setShowNewSupplier(false);
       addToast('Proveedor registrado correctamente');
     },
@@ -134,10 +148,8 @@ const InventoryManager = ({ addToast }) => {
   // Total factura con impuestos
   const totalFactura = useMemo(() => {
     const iva = Number(entryForm.iva_21) || 0;
-    const percIva = Number(entryForm.percepcion_iva) || 0;
-    const percIibb = Number(entryForm.percepcion_iibb) || 0;
-    return Math.round((subtotalNeto + iva + percIva + percIibb) * 100) / 100;
-  }, [subtotalNeto, entryForm.iva_21, entryForm.percepcion_iva, entryForm.percepcion_iibb]);
+    return Math.round((subtotalNeto + iva) * 100) / 100;
+  }, [subtotalNeto, entryForm.iva_21]);
 
   const handleSelectSupplier = (id) => {
     setSelectedSupplier(id);
@@ -202,8 +214,6 @@ const InventoryManager = ({ addToast }) => {
       entry_date: entryForm.entry_date,
       items: processedItems,
       iva_21: Number(entryForm.iva_21) || 0,
-      percepcion_iva: Number(entryForm.percepcion_iva) || 0,
-      percepcion_iibb: Number(entryForm.percepcion_iibb) || 0,
     });
   };
 
@@ -245,10 +255,10 @@ const InventoryManager = ({ addToast }) => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!newSupplierForm.name.trim()) return;
+              if (!newSupplierForm.name.trim() || !newSupplierForm.category_id) return;
               createSupplierMutation.mutate({
                 name: newSupplierForm.name.trim(),
-                category: newSupplierForm.category,
+                category_id: newSupplierForm.category_id,
               });
             }}
             className="mb-4 p-4 bg-gray-50 rounded-xl border-2 border-dashed border-primary/30 space-y-3"
@@ -269,24 +279,24 @@ const InventoryManager = ({ addToast }) => {
               <div>
                 <label className="block text-xs sm:text-sm font-bold mb-1" style={{ color: '#111827' }}>Categoría</label>
                 <select
-                  value={newSupplierForm.category}
-                  onChange={(e) => setNewSupplierForm((prev) => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold cursor-pointer text-gray-900 bg-white placeholder:text-gray-400"
+                  value={newSupplierForm.category_id}
+                  onChange={(e) => setNewSupplierForm((prev) => ({ ...prev, category_id: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-medium cursor-pointer text-gray-900 bg-white placeholder:text-gray-400"
+                  required
                   style={{ color: '#111827' }}
                 >
-                  <option value="Carne">Carne</option>
-                  <option value="Pollo">Pollo</option>
-                  <option value="Cerdo">Cerdo</option>
-                  <option value="Achuras">Achuras</option>
-                  <option value="Pescado">Pescado</option>
-                  <option value="Almacén">Almacén</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id} className="text-gray-900 bg-white">
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
-                onClick={() => { setShowNewSupplier(false); setNewSupplierForm({ name: '', category: 'Carne' }); }}
+                onClick={() => { setShowNewSupplier(false); setNewSupplierForm({ name: '', category_id: categories[0]?.id || '' }); }}
                 className="px-3 py-2 rounded-xl border-2 border-gray-200 font-bold text-xs sm:text-sm hover:border-primary transition"
                 style={{ color: '#111827' }}
               >
@@ -294,7 +304,7 @@ const InventoryManager = ({ addToast }) => {
               </button>
               <button
                 type="submit"
-                disabled={createSupplierMutation.isPending || !newSupplierForm.name.trim()}
+                disabled={createSupplierMutation.isPending || !newSupplierForm.name.trim() || !newSupplierForm.category_id}
                 className="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-primary text-white hover:bg-secondary transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {createSupplierMutation.isPending ? (
@@ -601,40 +611,10 @@ const InventoryManager = ({ addToast }) => {
                 />
               </div>
 
-              {/* Percepción IVA */}
-              <div>
-                <label className="block text-xs sm:text-sm font-bold mb-1" style={{ color: '#111827' }}>Perc. IVA</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={entryForm.percepcion_iva}
-                  onChange={(e) => setEntryForm((prev) => ({ ...prev, percepcion_iva: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
-                  style={{ color: '#111827' }}
-                  placeholder="0.00"
-                />
-              </div>
-
-              {/* Percepción IIBB */}
-              <div>
-                <label className="block text-xs sm:text-sm font-bold mb-1" style={{ color: '#111827' }}>Perc. IIBB</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={entryForm.percepcion_iibb}
-                  onChange={(e) => setEntryForm((prev) => ({ ...prev, percepcion_iibb: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm text-gray-900 bg-white font-medium placeholder:text-gray-400"
-                  style={{ color: '#111827' }}
-                  placeholder="0.00"
-                />
-              </div>
-
               {/* Total Factura (Debe) */}
               <div className="flex justify-between items-center bg-amber-50 rounded-lg px-3 py-2.5 border-2 border-amber-200">
-                <span className="text-sm sm:text-base font-bold text-amber-800">Total Factura (Debe)</span>
-                <span className="text-lg sm:text-xl font-extrabold text-amber-700">
+                <span className="text-sm sm:text-base font-bold text-amber-950">Total Factura (Debe)</span>
+                <span className="text-lg sm:text-xl font-extrabold text-amber-950">
                   ${totalFactura.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </span>
               </div>

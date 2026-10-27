@@ -431,53 +431,41 @@ const RemitosHistory = ({ addToast }) => {
                               </thead>
                               <tbody>
                                 {filteredEntries.map((entry) => {
-                                  const isAdj = entry.is_adjustment === true;
                                   return (
                                   <tr
                                     key={entry.id}
-                                    className={`border-b border-gray-100 hover:bg-gray-50 transition ${isAdj ? 'bg-amber-50/50' : ''}`}
+                                    className="border-b border-gray-100 hover:bg-gray-50 transition"
                                   >
                                     <td
                                       className="py-3 px-4 font-bold cursor-pointer"
                                       style={{ color: '#111827' }}
-                                      onClick={() => !isAdj && setSelectedEntry(entry.id)}
+                                      onClick={() => setSelectedEntry(entry.id)}
                                     >
                                       {fmtDate(entry.entry_date)}
                                     </td>
                                     <td
                                       className="py-3 px-4 cursor-pointer"
                                       style={{ color: '#6b7280' }}
-                                      onClick={() => !isAdj && setSelectedEntry(entry.id)}
+                                      onClick={() => setSelectedEntry(entry.id)}
                                     >
-                                      {isAdj ? (
-                                        <span className="inline-flex items-center gap-1.5">
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 text-amber-800 uppercase tracking-wide">Ajuste</span>
-                                          {entry.adjustment_notes || '—'}
-                                        </span>
-                                      ) : (entry.invoice_number || '—')}
+                                      {entry.invoice_number || '—'}
                                     </td>
                                     <td
                                       className="py-3 px-4 text-right font-extrabold cursor-pointer"
                                       style={{ color: '#8B0000' }}
-                                      onClick={() => !isAdj && setSelectedEntry(entry.id)}
+                                      onClick={() => setSelectedEntry(entry.id)}
                                     >
                                       ${fmtMoney(entry.total_debe)}
                                     </td>
                                     <td className="py-3 px-4 text-right">
                                       <div className="flex items-center justify-end gap-2">
-                                        {isAdj ? (
-                                          <span className="text-xs text-amber-700 font-bold italic">
-                                            Ajuste manual
-                                          </span>
-                                        ) : (
-                                          <button
-                                            onClick={() => setSelectedEntry(entry.id)}
-                                            className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition"
-                                            style={{ color: '#8B0000' }}
-                                          >
-                                            Ver detalle
-                                          </button>
-                                        )}
+                                        <button
+                                          onClick={() => setSelectedEntry(entry.id)}
+                                          className="text-xs font-bold px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition"
+                                          style={{ color: '#8B0000' }}
+                                        >
+                                          Ver detalle
+                                        </button>
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -499,46 +487,32 @@ const RemitosHistory = ({ addToast }) => {
 
                           <div className="sm:hidden space-y-3">
                             {filteredEntries.map((entry) => {
-                              const isAdj = entry.is_adjustment === true;
                               return (
                               <div
                                 key={entry.id}
-                                className={`p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 transition-all ${isAdj ? 'bg-amber-50/50 border-amber-200' : 'bg-white'}`}
+                                className="p-4 rounded-xl border-2 border-gray-200 hover:border-primary/40 transition-all bg-white"
                               >
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1">
                                     <div className="font-bold text-sm" style={{ color: '#111827' }}>
                                       {fmtDate(entry.entry_date)}
                                     </div>
-                                    {isAdj ? (
-                                      <div className="flex items-center gap-1.5 mt-0.5">
-                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 text-amber-800 uppercase tracking-wide">Ajuste</span>
-                                        <span className="text-xs" style={{ color: '#6b7280' }}>{entry.adjustment_notes || ''}</span>
-                                      </div>
-                                    ) : (
-                                      <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
-                                        Remito: {entry.invoice_number || '—'}
-                                      </div>
-                                    )}
+                                    <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>
+                                      Remito: {entry.invoice_number || '—'}
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <div className="text-right">
                                       <div className="font-extrabold text-base" style={{ color: '#8B0000' }}>
                                         ${fmtMoney(entry.total_debe)}
                                       </div>
-                                      {isAdj ? (
-                                        <div className="text-[10px] font-bold mt-0.5 text-amber-700 italic">
-                                          Ajuste manual
-                                        </div>
-                                      ) : (
-                                        <button
-                                          onClick={() => setSelectedEntry(entry.id)}
-                                          className="text-[10px] font-bold mt-0.5"
-                                          style={{ color: '#8B0000' }}
-                                        >
-                                          Ver detalle →
-                                        </button>
-                                      )}
+                                      <button
+                                        onClick={() => setSelectedEntry(entry.id)}
+                                        className="text-[10px] font-bold mt-0.5"
+                                        style={{ color: '#8B0000' }}
+                                      >
+                                        Ver detalle →
+                                      </button>
                                     </div>
                                     <button
                                       onClick={() => setDeletingEntryId(entry.id)}
@@ -915,7 +889,7 @@ const RemitosHistory = ({ addToast }) => {
                               </thead>
                               <tbody>
                                 {statementData.movements.map((mov, idx) => (
-                                  <tr key={`${mov.type}-${mov.id}-${idx}`} className={`border-b border-gray-100 ${mov.type === 'payment' ? 'bg-green-50/40' : mov.type === 'adjustment' ? 'bg-amber-50/40' : 'bg-red-50/30'}`}>
+                                  <tr key={`${mov.type}-${mov.id}-${idx}`} className={`border-b border-gray-100 ${mov.type === 'payment' ? 'bg-green-50/40' : 'bg-red-50/30'}`}>
                                     <td className="py-2.5 px-4 font-bold" style={{ color: '#111827' }}>
                                       {formatDate(mov.date)}
                                     </td>
@@ -938,7 +912,7 @@ const RemitosHistory = ({ addToast }) => {
                             {statementData.movements.map((mov, idx) => (
                               <div
                                 key={`${mov.type}-${mov.id}-${idx}`}
-                                className={`p-3 rounded-xl border-2 ${mov.type === 'payment' ? 'border-green-200 bg-green-50/40' : mov.type === 'adjustment' ? 'border-amber-200 bg-amber-50/40' : 'border-red-200 bg-red-50/30'}`}
+                                className={`p-3 rounded-xl border-2 ${mov.type === 'payment' ? 'border-green-200 bg-green-50/40' : 'border-red-200 bg-red-50/30'}`}
                               >
                                 <div className="flex justify-between items-center">
                                   <div>
