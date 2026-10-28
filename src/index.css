@@ -21,3 +21,40 @@ body {
     display: none;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body.print-wholesale {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: #fff;
+  }
+
+  body.print-wholesale * {
+    visibility: hidden;
+  }
+
+  body.print-wholesale #wholesale-print-area,
+  body.print-wholesale #wholesale-print-area * {
+    visibility: visible;
+  }
+
+  body.print-wholesale #wholesale-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  body.print-wholesale thead {
+    display: table-header-group;
+  }
+
+  body.print-wholesale tr {
+    break-inside: avoid;
+  }
+}

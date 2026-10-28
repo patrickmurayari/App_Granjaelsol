@@ -13,6 +13,7 @@ import MetodosPago from './Components/MetodosPago'
 import Admin from './pages/Admin';
 import QuienesSomos from './pages/QuienesSomos';
 import Login from './pages/Login';
+import WholesalePricing from './pages/WholesalePricing';
 import CartDrawer from './Components/CartDrawer';
 import { AuthProvider } from './context/AuthContext';
 
@@ -43,6 +44,7 @@ const App = () => {
                 />
                 <Route path="/quienessomos" element={<QuienesSomos />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/mayoristas" element={<WholesalePricing />} />
                 <Route path="/admin" element={<Admin />} />
             </Routes>
             <CartDrawer />
