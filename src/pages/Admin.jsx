@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { useAuth } from '../context/AuthContext';
 import {
-  Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, TrendingUp, Tag,
+  Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, TrendingUp, Tag, BarChart3,
   Loader2, AlertCircle, CheckCircle, X, Menu,
 } from 'lucide-react';
 
@@ -14,8 +15,9 @@ import InventoryManager from '../Components/Admin/InventoryManager';
 import RemitosHistory from '../Components/Admin/RemitosHistory';
 import FinanceManager from '../Components/Admin/FinanceManager';
 import OffersManager from '../Components/Admin/OffersManager';
+import AnalyticsDashboard from '../Components/Admin/AnalyticsDashboard';
 
-const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos', 'Finanzas', 'Ofertas'];
+const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos', 'Finanzas', 'Estadísticas', 'Ofertas'];
 
 const TAB_ICONS = {
   'Productos': Package,
@@ -25,13 +27,14 @@ const TAB_ICONS = {
   'Inventario': Truck,
   'Remitos': FileText,
   'Finanzas': TrendingUp,
+  'Estadísticas': BarChart3,
   'Ofertas': Tag,
 };
 
-const Admin = () => {
+const Admin = ({ initialTab }) => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState(TABS[0]);
+  const [activeTab, setActiveTab] = useState(TABS.includes(initialTab) ? initialTab : TABS[0]);
   const [toasts, setToasts] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -81,6 +84,7 @@ const Admin = () => {
       case 'Inventario': return <InventoryManager addToast={addToast} />;
       case 'Remitos': return <RemitosHistory addToast={addToast} />;
       case 'Finanzas': return <FinanceManager addToast={addToast} />;
+      case 'Estadísticas': return <AnalyticsDashboard />;
       case 'Ofertas': return <OffersManager addToast={addToast} />;
       default: return null;
     }
@@ -89,10 +93,10 @@ const Admin = () => {
   const ActiveIcon = TAB_ICONS[activeTab] || Package;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 print:bg-white print:min-h-0">
 
       {/* ── Mobile top bar ───────────────────────────────────── */}
-      <div className="sticky top-0 z-30 md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
+      <div className="print:hidden sticky top-0 z-30 md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center">
             <ActiveIcon className="w-4 h-4 text-primary" />
@@ -196,11 +200,11 @@ const Admin = () => {
       </div>
 
       {/* ── Main content ─────────────────────────────────────── */}
-      <div className="px-3 sm:px-4 md:px-8 pt-4 md:pt-10 pb-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="px-3 sm:px-4 md:px-8 pt-4 md:pt-10 pb-8 print:p-0">
+        <div className="max-w-6xl mx-auto print:max-w-none">
 
           {/* Desktop header — hidden on mobile */}
-          <div className="hidden md:flex items-center justify-between gap-4 mb-6">
+          <div className="hidden md:flex print:!hidden items-center justify-between gap-4 mb-6">
             <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-text-dark">
               Panel de Administración
             </h1>
@@ -225,7 +229,7 @@ const Admin = () => {
           </div>
 
           {/* Desktop tabs — hidden on mobile */}
-          <div className="hidden md:flex gap-2 mb-6 overflow-x-auto pb-2">
+          <div className="hidden md:flex print:!hidden gap-2 mb-6 overflow-x-auto pb-2">
             {TABS.map((tab) => {
               const Icon = TAB_ICONS[tab] || Plus;
               return (
@@ -251,7 +255,7 @@ const Admin = () => {
       </div>
 
       {/* ── Toasts ── */}
-      <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none">
+      <div className="print:hidden fixed bottom-4 right-4 left-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
           <div
             key={t.id}
@@ -272,6 +276,10 @@ const Admin = () => {
       </div>
     </div>
   );
+};
+
+Admin.propTypes = {
+  initialTab: PropTypes.string,
 };
 
 export default Admin;

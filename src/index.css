@@ -57,4 +57,21 @@ body {
   body.print-wholesale tr {
     break-inside: avoid;
   }
+
+  #analytics-report {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #analytics-report .shadow-sm {
+    box-shadow: none;
+  }
+
+  #analytics-report .recharts-responsive-container {
+    width: 100% !important;
+  }
+
+  #analytics-report thead {
+    display: table-header-group;
+  }
 }

@@ -46,6 +46,7 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/mayoristas" element={<WholesalePricing />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/estadisticas" element={<Admin initialTab="Estadísticas" />} />
             </Routes>
             <CartDrawer />
         </AuthProvider>
