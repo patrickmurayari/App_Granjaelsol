@@ -7,24 +7,22 @@ import {
 } from 'recharts';
 import {
   DollarSign, Scale, Beef, FileText, Printer, Loader2, AlertCircle, CalendarRange,
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, BarChart3, Inbox,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, BarChart3, Inbox, Truck, CreditCard, ArrowLeftRight,
 } from 'lucide-react';
-import api from '../../api/api';
 import { getTodayLocal } from '../../utils/dateUtils';
+import { KpiCard, KpiSkeleton, ChartCard, TooltipBox, ErrorBanner } from './analytics/AnalyticsCards';
+import FiservSection from './analytics/FiservSection';
+import CashflowSection from './analytics/CashflowSection';
+import {
+  currencyShortFmt, numberFmt, decimalFmt, fmtMoney, fmtKg, fmtShortDate, fmtDate,
+  PRIMARY, BAR_COLORS, PAGE_SIZE, shiftDays, fetchAnalytics,
+} from './analytics/analyticsUtils';
 
-const currencyFmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
-const currencyShortFmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1 });
-const numberFmt = new Intl.NumberFormat('es-AR');
-const decimalFmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const fmtMoney = (n) => currencyFmt.format(Number(n) || 0);
-const fmtKg = (n) => `${decimalFmt.format(Number(n) || 0)} kg`;
-const fmtShortDate = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
-const fmtDate = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '—');
-
-const PRIMARY = '#8B0000';
-const BAR_COLORS = ['#8B0000', '#b45309', '#15803d', '#1d4ed8', '#7c3aed', '#0f766e', '#be185d', '#4b5563'];
-const PAGE_SIZE = 10;
+const VIEWS = [
+  { key: 'compras', label: 'Compras y Proveedores', icon: Truck, title: 'Reporte de Compras y Proveedores' },
+  { key: 'fiserv', label: 'Cobranzas Digitales (Fiserv)', icon: CreditCard, title: 'Reporte de Cobranzas Digitales (Fiserv)' },
+  { key: 'cashflow', label: 'Flujo de Caja (Caja vs. Compras)', icon: ArrowLeftRight, title: 'Reporte de Flujo de Caja (Posnet vs. Compras)' },
+];
 
 const PRESETS = [
   { key: '30d', label: 'Últimos 30 días', days: 30 },
@@ -32,78 +30,10 @@ const PRESETS = [
   { key: 'all', label: 'Histórico completo', days: null },
 ];
 
-const shiftDays = (isoDate, days) => {
-  const [y, m, d] = isoDate.split('-').map(Number);
-  const dt = new Date(y, m - 1, d - days);
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-};
-
 const isHalfCarcass = (producto) => {
   const p = String(producto || '');
   return /(1\/2\s*res|media)/i.test(p) && !/s\/\s*p|sin\s*pecho/i.test(p);
 };
-
-const fetchAnalytics = async (path, params) => {
-  const { data } = await api.get(`/analytics/${path}`, { params });
-  return data;
-};
-
-const KpiCard = ({ icon: Icon, label, value, badge, accent }) => (
-  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 break-inside-avoid">
-    <div className="flex items-center justify-between mb-3">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${accent}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-        {badge}
-      </span>
-    </div>
-    <p className="text-xs sm:text-sm font-semibold text-gray-500">{label}</p>
-    <p className="text-lg sm:text-2xl font-extrabold text-gray-900 mt-0.5 break-words">{value}</p>
-  </div>
-);
-
-KpiCard.propTypes = {
-  icon: PropTypes.elementType.isRequired,
-  label: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  badge: PropTypes.string.isRequired,
-  accent: PropTypes.string.isRequired,
-};
-
-const ChartCard = ({ title, subtitle, loading, empty, children, className = '' }) => (
-  <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 break-inside-avoid ${className}`}>
-    <div className="mb-3">
-      <h3 className="font-extrabold text-gray-900 text-sm sm:text-base">{title}</h3>
-      {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
-    </div>
-    {loading ? (
-      <div className="h-72 rounded-xl bg-gray-100 animate-pulse" />
-    ) : empty ? (
-      <div className="h-72 flex flex-col items-center justify-center text-gray-400 text-sm font-semibold">
-        <Inbox className="w-8 h-8 mb-2" />
-        Sin datos para el período seleccionado
-      </div>
-    ) : (
-      children
-    )}
-  </div>
-);
-
-ChartCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string,
-  loading: PropTypes.bool,
-  empty: PropTypes.bool,
-  children: PropTypes.node,
-  className: PropTypes.string,
-};
-
-const TooltipBox = ({ children }) => (
-  <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-3 py-2 text-xs text-gray-800 space-y-0.5">{children}</div>
-);
-
-TooltipBox.propTypes = { children: PropTypes.node };
 
 const SupplierTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
@@ -160,6 +90,7 @@ const AnalyticsDashboard = () => {
   const [endDate, setEndDate] = useState(today);
   const [page, setPage] = useState(0);
   const [tableOpen, setTableOpen] = useState(true);
+  const [view, setView] = useState('compras');
 
   const rangeInvalid = Boolean(startDate && endDate && startDate > endDate);
 
@@ -170,7 +101,7 @@ const AnalyticsDashboard = () => {
     return p;
   }, [startDate, endDate]);
 
-  const queryOpts = { enabled: !rangeInvalid, placeholderData: keepPreviousData, staleTime: 60_000 };
+  const queryOpts = { enabled: !rangeInvalid && view === 'compras', placeholderData: keepPreviousData, staleTime: 60_000 };
 
   const weeklyQuery = useQuery({
     queryKey: ['analytics', 'weekly', params],
@@ -207,7 +138,7 @@ const AnalyticsDashboard = () => {
   };
 
   const kpis = weeklyQuery.data?.kpis;
-  const weeklyRows = weeklyQuery.data?.data || [];
+  const weeklyRows = useMemo(() => weeklyQuery.data?.data || [], [weeklyQuery.data]);
   const shareRows = shareQuery.data?.data || [];
 
   const weeklySeries = useMemo(() => {
@@ -263,13 +194,14 @@ const AnalyticsDashboard = () => {
   const periodLabel = startDate || endDate
     ? `${startDate ? fmtDate(startDate) : 'inicio'} al ${endDate ? fmtDate(endDate) : 'hoy'}`
     : 'Histórico completo';
+  const activeView = VIEWS.find((v) => v.key === view) || VIEWS[0];
 
   return (
     <div id="analytics-report" className="space-y-5">
       {/* ── Encabezado de impresión ── */}
       <div className="hidden print:flex items-end justify-between border-b-2 border-gray-800 pb-2">
         <div>
-          <h1 className="text-xl font-extrabold text-gray-900">Granja El Sol — Reporte de Compras</h1>
+          <h1 className="text-xl font-extrabold text-gray-900">Granja El Sol — {activeView.title}</h1>
           <p className="text-xs text-gray-600">Período: {periodLabel}</p>
         </div>
         <p className="text-xs text-gray-600">Emitido: {fmtDate(today)}</p>
@@ -280,7 +212,7 @@ const AnalyticsDashboard = () => {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            <h2 className="font-extrabold text-gray-900">Estadísticas de Compras</h2>
+            <h2 className="font-extrabold text-gray-900">Estadísticas y Analítica</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {PRESETS.map((p) => (
@@ -337,19 +269,37 @@ const AnalyticsDashboard = () => {
         </div>
       )}
 
-      {anyError && (
-        <div className="flex items-center gap-2 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3 text-sm font-bold text-red-800">
-          <AlertCircle className="w-4 h-4" />
-          No se pudieron cargar algunas estadísticas. Verificá la conexión e intentá nuevamente.
-        </div>
-      )}
+      {/* ── Selector de vista interna ── */}
+      <div className="print:hidden flex gap-2 overflow-x-auto pb-1">
+        {VIEWS.map((v) => {
+          const Icon = v.icon;
+          return (
+            <button
+              key={v.key}
+              type="button"
+              onClick={() => setView(v.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 transition ${
+                view === v.key ? 'bg-gray-900 border-gray-900 text-white shadow-md' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-900'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {v.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {view === 'fiserv' && <FiservSection params={params} enabled={!rangeInvalid} />}
+      {view === 'cashflow' && <CashflowSection params={params} enabled={!rangeInvalid} />}
+
+      {view === 'compras' && (
+      <>
+      {anyError && <ErrorBanner />}
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 print:grid-cols-4">
         {weeklyQuery.isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl bg-gray-100 animate-pulse" />
-          ))
+          <KpiSkeleton count={4} />
         ) : (
           <>
             <KpiCard icon={DollarSign} label="Inversión Total Acumulada" value={fmtMoney(kpis?.total_invertido_acumulado)} badge="Pesos" accent="bg-red-100 text-red-800" />
@@ -523,6 +473,8 @@ const AnalyticsDashboard = () => {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };
