@@ -3,8 +3,10 @@ import PropTypes from 'prop-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
 import {
-  Search, X, ToggleLeft, ToggleRight, Loader2, AlertCircle, Trash2,
+  Search, X, ToggleLeft, ToggleRight, Loader2, AlertCircle, Trash2, ChevronLeft, ChevronRight,
 } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 10;
 
 const ADMIN_CATEGORIES = ['Todas', 'Carnes', 'Cerdo', 'Pollos', 'Achuras', 'Bebidas', 'Snacks', 'Almacén', 'Salsas'];
 
@@ -18,6 +20,7 @@ const ProductsManager = ({ addToast }) => {
   const [editForm, setEditForm] = useState(EMPTY_EDIT);
   const [togglingId, setTogglingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
     data: productos,
@@ -41,6 +44,11 @@ const ProductsManager = ({ addToast }) => {
       p.nombre?.toLowerCase().includes(term)
     );
   }, [productos, searchProd]);
+
+  const totalPages = Math.ceil(rows.length / ITEMS_PER_PAGE) || 1;
+  const page = Math.min(currentPage, totalPages);
+  const startIndex = (page - 1) * ITEMS_PER_PAGE;
+  const currentProducts = rows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, payload }) => {
@@ -138,7 +146,7 @@ const ProductsManager = ({ addToast }) => {
       <div className="mb-4 flex flex-col sm:flex-row gap-3">
         <select
           value={selectedCategory}
-          onChange={(e) => { setSelectedCategory(e.target.value); setSearchProd(''); }}
+          onChange={(e) => { setSelectedCategory(e.target.value); setSearchProd(''); setCurrentPage(1); }}
           className="px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold text-gray-900 bg-white cursor-pointer"
         >
           {ADMIN_CATEGORIES.map((cat) => (
@@ -152,12 +160,12 @@ const ProductsManager = ({ addToast }) => {
             type="text"
             placeholder="Buscar producto por nombre..."
             value={searchProd}
-            onChange={(e) => setSearchProd(e.target.value)}
+            onChange={(e) => { setSearchProd(e.target.value); setCurrentPage(1); }}
             className="w-full pl-10 pr-10 py-2.5 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base md:text-sm font-bold text-gray-900 placeholder:text-gray-400"
           />
           {searchProd && (
             <button
-              onClick={() => setSearchProd('')}
+              onClick={() => { setSearchProd(''); setCurrentPage(1); }}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition"
             >
               <X className="w-4 h-4" />
@@ -187,7 +195,7 @@ const ProductsManager = ({ addToast }) => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((p) => {
+              {currentProducts.map((p) => {
                 const isDisponible = p.disponible !== false;
                 const isToggling = togglingId === p.id;
                 return (
@@ -265,6 +273,39 @@ const ProductsManager = ({ addToast }) => {
             </tbody>
           </table>
         </div>
+
+        {rows.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs sm:text-sm text-text-dark/70">
+              Mostrando <span className="font-bold text-text-dark">{startIndex + 1}</span> a{' '}
+              <span className="font-bold text-text-dark">{Math.min(startIndex + ITEMS_PER_PAGE, rows.length)}</span> de{' '}
+              <span className="font-bold text-text-dark">{rows.length}</span> productos
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(page - 1)}
+                disabled={page === 1}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-gray-200 bg-white font-bold text-xs sm:text-sm text-text-dark hover:border-primary transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Anterior
+              </button>
+              <span className="text-xs sm:text-sm font-bold text-text-dark px-1">
+                Página {page} de {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(page + 1)}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border-2 border-gray-200 bg-white font-bold text-xs sm:text-sm text-text-dark hover:border-primary transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-200"
+              >
+                Siguiente
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       )}
 
