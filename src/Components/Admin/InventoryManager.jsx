@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/api';
 import { getTodayLocal } from '../../utils/dateUtils';
@@ -195,6 +195,19 @@ const InventoryManager = ({ addToast }) => {
     setPaymentForm((prev) => ({ ...prev, supplier_id: id }));
   };
 
+  const operationsRef = useRef(null);
+
+  const activeSupplier = useMemo(
+    () => (suppliers || []).find((s) => String(s.id) === String(selectedSupplier)) || null,
+    [suppliers, selectedSupplier]
+  );
+
+  useEffect(() => {
+    if (selectedSupplier && operationsRef.current) {
+      operationsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [selectedSupplier]);
+
   const handleEntryItemChange = (index, field, value) => {
     const updated = [...entryForm.items];
     updated[index] = { ...updated[index], [field]: value };
@@ -348,28 +361,53 @@ const InventoryManager = ({ addToast }) => {
             Error al cargar proveedores.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(suppliers || []).map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handleSelectSupplier(s.id)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  selectedSupplier === s.id
-                    ? 'border-primary bg-primary/5 shadow-lg'
-                    : 'border-gray-200 hover:border-primary/40 bg-white'
-                }`}
-              >
-                <div className="font-extrabold text-sm sm:text-base" style={{ color: '#111827' }}>{s.name}</div>
-                <div className="text-xs mt-1" style={{ color: '#6b7280' }}>{s.category || 'Sin categoría'}</div>
-              </button>
-            ))}
-          </div>
+          <>
+            <select
+              value={selectedSupplier ?? ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) handleSelectSupplier(val);
+              }}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition text-base font-bold text-gray-900 bg-white cursor-pointer"
+            >
+              <option value="">Seleccionar proveedor...</option>
+              {(suppliers || []).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.category || 'Sin categoría'})
+                </option>
+              ))}
+            </select>
+
+            {activeSupplier && (
+              <div className="mt-3 p-4 rounded-xl border-2 border-primary/30 bg-primary/5 flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-extrabold text-base sm:text-lg text-text-dark truncate">
+                    {activeSupplier.name}
+                  </div>
+                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/15 text-primary">
+                    {activeSupplier.category || 'Sin categoría'}
+                  </span>
+                </div>
+                {loadingBalance && (
+                  <Loader2 className="w-5 h-5 animate-spin text-primary/50 shrink-0" />
+                )}
+                {balanceData && !loadingBalance && (
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-bold text-text-dark/60">Saldo</div>
+                    <div className={`text-lg font-extrabold ${balanceData.saldo_pendiente > 0 ? 'text-amber-700' : 'text-green-600'}`}>
+                      ${Math.abs(balanceData.saldo_pendiente).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* ── Saldo del proveedor ── */}
       {selectedSupplier && (
-        <div className="bg-white shadow-lg rounded-2xl border border-gray-200 p-4 sm:p-6">
+        <div ref={operationsRef} className="bg-white shadow-lg rounded-2xl border border-gray-200 p-4 sm:p-6 scroll-mt-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-xl flex items-center justify-center">
               <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-amber-700" />
