@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import api from '../../api/api';
 import { formatDate } from '../../utils/dateUtils';
 import {
-  FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet, ChevronLeft, ChevronRight, ClipboardCopy, TrendingUp
+  FileText, DollarSign, Loader2, AlertCircle, X, Search, Pencil, Trash2, CheckCircle, CreditCard, Wallet, ChevronLeft, ChevronRight, ClipboardCopy, TrendingUp, Printer
 } from 'lucide-react';
 
 const RemitosHistory = ({ addToast }) => {
@@ -21,6 +21,9 @@ const RemitosHistory = ({ addToast }) => {
   const [deletingPaymentId, setDeletingPaymentId] = useState(null);
   const [deletingEntryId, setDeletingEntryId] = useState(null);
   const [statementWeekOffset, setStatementWeekOffset] = useState(0);
+  const [statementMode, setStatementMode] = useState('week');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
   const {
     data: suppliers,
@@ -83,7 +86,12 @@ const RemitosHistory = ({ addToast }) => {
     return { startDate: fmt(monday), endDate: fmt(sunday), monday, sunday };
   };
 
-  const statementWeek = getWeekRange(statementWeekOffset);
+  const weekRange = getWeekRange(statementWeekOffset);
+  const isCustomMode = statementMode === 'custom';
+  const customRangeValid = Boolean(customFrom && customTo && customFrom <= customTo);
+  const statementWeek = isCustomMode
+    ? { startDate: customFrom, endDate: customTo }
+    : weekRange;
 
   const {
     data: statementData,
@@ -97,7 +105,7 @@ const RemitosHistory = ({ addToast }) => {
       });
       return data;
     },
-    enabled: !!remitosSupplier && supplierTab === 'estado',
+    enabled: !!remitosSupplier && supplierTab === 'estado' && (!isCustomMode || customRangeValid),
   });
 
   const filteredEntries = useMemo(() => {
@@ -302,7 +310,7 @@ const RemitosHistory = ({ addToast }) => {
             </div>
             {remitosSupplier && (
               <button
-                onClick={() => { setRemitosSupplier(null); setSelectedEntry(null); setSearchTerm(''); setSupplierTab('remitos'); setStatementWeekOffset(0); }}
+                onClick={() => { setRemitosSupplier(null); setSelectedEntry(null); setSearchTerm(''); setSupplierTab('remitos'); setStatementWeekOffset(0); setStatementMode('week'); setCustomFrom(''); setCustomTo(''); }}
                 className="px-3 py-2 rounded-xl border-2 border-gray-200 font-bold text-xs sm:text-sm hover:border-primary transition"
                 style={{ color: '#111827' }}
               >
@@ -805,31 +813,96 @@ const RemitosHistory = ({ addToast }) => {
 
               {supplierTab === 'estado' && (
                 <>
-                  {/* Week selector */}
-                  <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-xl px-4 py-3">
-                    <button
-                      onClick={() => setStatementWeekOffset((prev) => prev - 1)}
-                      className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition"
-                    >
-                      <ChevronLeft className="w-5 h-5" style={{ color: '#111827' }} />
-                    </button>
-                    <div className="text-center">
-                      <div className="font-extrabold text-sm" style={{ color: '#111827' }}>
-                        Semana del {formatDate(statementWeek.startDate)} al {formatDate(statementWeek.endDate)}
-                      </div>
-                      {statementWeekOffset === 0 && (
-                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">Semana actual</span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setStatementWeekOffset((prev) => prev + 1)}
-                      className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition"
-                    >
-                      <ChevronRight className="w-5 h-5" style={{ color: '#111827' }} />
-                    </button>
+                  <style>{`
+                    .statement-print-header { display: none; }
+                    @media print {
+                      body * { visibility: hidden !important; }
+                      #statement-print, #statement-print * { visibility: visible !important; }
+                      #statement-print { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; background: #fff; }
+                      #statement-print .no-print { display: none !important; }
+                      #statement-print .statement-print-header { display: block; margin-bottom: 12px; font-size: 16px; font-weight: 800; color: #111827; }
+                      #statement-print .print-table { display: block !important; }
+                      #statement-print .print-cards { display: none !important; }
+                      #statement-print .kpi-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; }
+                      #statement-print table { width: 100%; border-collapse: collapse; }
+                      #statement-print tr { page-break-inside: avoid; }
+                      #statement-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
+                  `}</style>
+
+                  {/* Mode toggle */}
+                  <div className="grid grid-cols-2 gap-2 mb-3 sm:inline-flex">
+                    {[{ key: 'week', label: 'Por Semana' }, { key: 'custom', label: 'Rango Personalizado' }].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setStatementMode(key)}
+                        className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                          statementMode === key
+                            ? 'bg-primary text-white shadow-lg'
+                            : 'bg-white text-gray-900 border border-gray-200 hover:border-primary'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
 
-                  {loadingStatement ? (
+                  {!isCustomMode ? (
+                    <div className="flex items-center justify-between mb-4 bg-gray-50 rounded-xl px-4 py-3">
+                      <button
+                        onClick={() => setStatementWeekOffset((prev) => prev - 1)}
+                        className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition"
+                      >
+                        <ChevronLeft className="w-5 h-5" style={{ color: '#111827' }} />
+                      </button>
+                      <div className="text-center">
+                        <div className="font-extrabold text-sm" style={{ color: '#111827' }}>
+                          Semana del {formatDate(weekRange.startDate)} al {formatDate(weekRange.endDate)}
+                        </div>
+                        {statementWeekOffset === 0 && (
+                          <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">Semana actual</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setStatementWeekOffset((prev) => prev + 1)}
+                        className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition"
+                      >
+                        <ChevronRight className="w-5 h-5" style={{ color: '#111827' }} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mb-4 bg-gray-50 rounded-xl px-4 py-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Desde</label>
+                          <input
+                            type="date"
+                            value={customFrom}
+                            onChange={(e) => setCustomFrom(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary text-base md:text-sm text-gray-900 bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold mb-1" style={{ color: '#111827' }}>Hasta</label>
+                          <input
+                            type="date"
+                            value={customTo}
+                            min={customFrom || undefined}
+                            onChange={(e) => setCustomTo(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-primary text-base md:text-sm text-gray-900 bg-white font-medium"
+                          />
+                        </div>
+                      </div>
+                      {customFrom && customTo && customFrom > customTo && (
+                        <p className="mt-2 text-xs font-bold text-red-600">La fecha &quot;Desde&quot; no puede ser posterior a &quot;Hasta&quot;.</p>
+                      )}
+                      {!customRangeValid && !(customFrom && customTo && customFrom > customTo) && (
+                        <p className="mt-2 text-xs text-gray-500">Seleccioná ambas fechas para ver el período.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {isCustomMode && !customRangeValid ? null : loadingStatement ? (
                     <div className="text-center py-10 flex items-center justify-center gap-2 text-text-dark/60">
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Cargando estado de cuenta...
@@ -840,25 +913,31 @@ const RemitosHistory = ({ addToast }) => {
                       Error al cargar el estado de cuenta.
                     </div>
                   ) : statementData ? (
-                    <>
+                    <div id="statement-print">
+                      <div className="statement-print-header">
+                        Cuenta Corriente - {suppliers?.find((sp) => sp.id === remitosSupplier)?.name || 'Proveedor'} | {isCustomMode ? 'Período' : 'Semana'} {formatDate(statementWeek.startDate)} al {formatDate(statementWeek.endDate)}
+                      </div>
+                      <div className="font-extrabold text-sm mb-3" style={{ color: '#111827' }}>
+                        {isCustomMode ? 'Período' : 'Semana'} del {formatDate(statementWeek.startDate)} al {formatDate(statementWeek.endDate)}
+                      </div>
                       {/* KPI cards */}
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                      <div className="kpi-grid grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                         <div className="bg-gray-100 rounded-xl p-3 sm:p-4">
                           <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-gray-500">Saldo Anterior</div>
                           <div className="text-base sm:text-xl font-extrabold mt-1" style={{ color: '#111827' }}>
-                            ${fmtMoney(statementData.summary.initial_balance)}
+                            ${fmtMoney(statementData.saldo_anterior ?? statementData.summary.initial_balance)}
                           </div>
                         </div>
                         <div className="bg-red-50 rounded-xl p-3 sm:p-4">
                           <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-red-400">Total Remitos (+)</div>
                           <div className="text-base sm:text-xl font-extrabold mt-1 text-red-700">
-                            ${fmtMoney(statementData.summary.period_debe)}
+                            ${fmtMoney(statementData.total_remitos ?? statementData.summary.period_debe)}
                           </div>
                         </div>
                         <div className="bg-green-50 rounded-xl p-3 sm:p-4">
                           <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-green-500">Total Pagos (-)</div>
                           <div className="text-base sm:text-xl font-extrabold mt-1 text-green-700">
-                            ${fmtMoney(statementData.summary.period_haber)}
+                            ${fmtMoney(statementData.total_pagos ?? statementData.summary.period_haber)}
                           </div>
                         </div>
                         <div className={`rounded-xl p-3 sm:p-4 ${statementData.summary.final_balance > 0 ? 'bg-orange-50' : 'bg-green-50'}`}>
@@ -873,11 +952,11 @@ const RemitosHistory = ({ addToast }) => {
                       {(statementData.movements || []).length === 0 ? (
                         <div className="text-center py-8 text-text-dark/50">
                           <FileText className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                          No hay movimientos en esta semana.
+                          No hay movimientos en este período.
                         </div>
                       ) : (
                         <>
-                          <div className="hidden sm:block overflow-x-auto">
+                          <div className="print-table hidden sm:block overflow-x-auto">
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="border-b-2 border-gray-200">
@@ -905,10 +984,21 @@ const RemitosHistory = ({ addToast }) => {
                                   </tr>
                                 ))}
                               </tbody>
+                              <tfoot>
+                                <tr className="border-t-2 border-gray-300 bg-gray-50">
+                                  <td colSpan={2} className="py-3 px-4 font-extrabold" style={{ color: '#111827' }}>Totales del período</td>
+                                  <td className="py-3 px-4 text-right font-extrabold text-red-700">
+                                    Total Remitos: ${fmtMoney(statementData.total_remitos ?? statementData.summary.period_debe)}
+                                  </td>
+                                  <td className="py-3 px-4 text-right font-extrabold text-green-700">
+                                    Total Pagos: ${fmtMoney(statementData.total_pagos ?? statementData.summary.period_haber)}
+                                  </td>
+                                </tr>
+                              </tfoot>
                             </table>
                           </div>
 
-                          <div className="sm:hidden space-y-2">
+                          <div className="print-cards sm:hidden space-y-2">
                             {statementData.movements.map((mov, idx) => (
                               <div
                                 key={`${mov.type}-${mov.id}-${idx}`}
@@ -938,14 +1028,22 @@ const RemitosHistory = ({ addToast }) => {
                       )}
 
                       {/* Share button */}
-                      <div className="mt-4 flex justify-end">
+                      <div className="no-print mt-4 flex justify-end gap-2">
+                        <button
+                          onClick={() => window.print()}
+                          className="px-4 py-2 rounded-xl font-bold text-xs bg-gray-100 hover:bg-gray-200 transition flex items-center gap-2"
+                          style={{ color: '#111827' }}
+                        >
+                          <Printer className="w-4 h-4" />
+                          Imprimir / PDF
+                        </button>
                         <button
                           onClick={() => {
                             const s = statementData.summary;
-                            const supplierName = suppliers?.find((s) => s.id === remitosSupplier)?.name || 'Proveedor';
+                            const supplierName = suppliers?.find((sp) => sp.id === remitosSupplier)?.name || 'Proveedor';
                             const lines = [
-                              `📋 *Estado de Cuenta - ${supplierName}*`,
-                              `Semana: ${formatDate(statementWeek.startDate)} al ${formatDate(statementWeek.endDate)}`,
+                              `📋 *Cuenta Corriente - ${supplierName}*`,
+                              `${isCustomMode ? 'Período' : 'Semana'} ${formatDate(statementWeek.startDate)} al ${formatDate(statementWeek.endDate)}`,
                               ``,
                               `💰 Saldo Anterior: $${fmtMoney(s.initial_balance)}`,
                               `📥 Remitos (+): $${fmtMoney(s.period_debe)}`,
@@ -964,7 +1062,7 @@ const RemitosHistory = ({ addToast }) => {
                           Compartir Resumen
                         </button>
                       </div>
-                    </>
+                    </div>
                   ) : null}
                 </>
               )}
