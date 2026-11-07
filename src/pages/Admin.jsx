@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useAuth } from '../context/AuthContext';
 import {
   Package, ShoppingCart, Plus, LogOut, Home, Truck, FileText, TrendingUp, Tag, BarChart3,
-  Loader2, AlertCircle, CheckCircle, X, Menu,
+  Loader2, AlertCircle, CheckCircle, X, Menu, Scale,
 } from 'lucide-react';
 
 import ProductsManager from '../Components/Admin/ProductsManager';
@@ -16,8 +16,9 @@ import RemitosHistory from '../Components/Admin/RemitosHistory';
 import FinanceManager from '../Components/Admin/FinanceManager';
 import OffersManager from '../Components/Admin/OffersManager';
 import AnalyticsDashboard from '../Components/Admin/AnalyticsDashboard';
+import BalanzaCodigosManager from '../Components/Admin/BalanzaCodigosManager';
 
-const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos', 'Finanzas', 'Estadísticas', 'Ofertas'];
+const TABS = ['Productos', 'Pedidos', 'Crear Producto', 'Cierre de Caja', 'Inventario', 'Remitos', 'Códigos Balanza', 'Finanzas', 'Estadísticas', 'Ofertas'];
 
 const TAB_ICONS = {
   'Productos': Package,
@@ -26,6 +27,7 @@ const TAB_ICONS = {
   'Cierre de Caja': Plus,
   'Inventario': Truck,
   'Remitos': FileText,
+  'Códigos Balanza': Scale,
   'Finanzas': TrendingUp,
   'Estadísticas': BarChart3,
   'Ofertas': Tag,
@@ -83,6 +85,7 @@ const Admin = ({ initialTab }) => {
       case 'Cierre de Caja': return <CashClosing />;
       case 'Inventario': return <InventoryManager addToast={addToast} />;
       case 'Remitos': return <RemitosHistory addToast={addToast} />;
+      case 'Códigos Balanza': return <BalanzaCodigosManager addToast={addToast} />;
       case 'Finanzas': return <FinanceManager addToast={addToast} />;
       case 'Estadísticas': return <AnalyticsDashboard />;
       case 'Ofertas': return <OffersManager addToast={addToast} />;
